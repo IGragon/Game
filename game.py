@@ -124,9 +124,9 @@ def draw_hud_text():
 
 
 def restart_level():
-    global player, level_x, level_y, camera, f
+    global player, level_x, level_y, camera
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
-    f = f.read()
+    f = f.read().split('\n')
     print(f)
     start_settings['level'] = f[0]
     start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
@@ -190,6 +190,39 @@ class Coin(pygame.sprite.Sprite):
                 self.image = self.frames[self.cur_frame]
 
 
+class Magic(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, speed):
+        super().__init__(passive_group, all_sprites)
+        self.frames = []
+        self.cut_sheet(load_image('coin.png'), 6, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect().move(tile_width * pos_x,
+                                               tile_height * pos_y)
+        self.update_counter = 0
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self, *args):
+        self.update_counter += 1
+        if pygame.sprite.spritecollideany(self, player_group):
+            player.coins += 1
+            player.score += 10
+
+            self.kill()
+        else:
+            if self.update_counter % 2 == 0:
+                self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+                self.image = self.frames[self.cur_frame]
+
+
 class Exit(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
@@ -203,10 +236,15 @@ class Exit(pygame.sprite.Sprite):
             data = ['{}level.txt'.format(str(int(start_settings['level'][0]) + 1)),
                     str(player.coins),
                     str(player.hp),
-                    str(player.score)]
+                    str(player.score),
+                    str(player.heal_poison),
+                    str(player.speed_poison),
+                    str(player.damage_increase)]
             f.writelines('\n'.join(data))
+            f.close()
+            for sprite in all_sprites:
+                sprite.kill()
             restart_level()
-            print('NextLevel')
 
 
 class Fire(pygame.sprite.Sprite):
@@ -323,6 +361,9 @@ class Player(pygame.sprite.Sprite):
         self.hp = start_settings['player_stats'][1]
         HPHud()
         self.score = start_settings['player_stats'][2]
+        self.heal_poison = 0
+        self.speed_poison = 0
+        self.damage_increase = 0
 
     def update(self, action, left=False):
         self.update_counter += 1

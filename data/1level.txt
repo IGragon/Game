@@ -2,7 +2,7 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT######################TTTT
-TTTT#HE..................#TTTT
+TTTT#H.E.................#TTTT
 TTTT#....................#TTTT
 TTTT#....................#TTTT
 TTTT#.................Z..#TTTT
