@@ -3,6 +3,26 @@ import sys
 import pygame
 import random
 
+    # сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+    # сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+# сделать обработчик для средних и тяжелых магов
+
+
 pygame.init()
 pygame.key.set_repeat(200, 70)
 
@@ -80,7 +100,7 @@ def generate_level(level):
                 Exit(x, y)
             elif level[y][x] == 'L':
                 Tile('empty', x, y)
-                Wizard(1, 50, x, y)
+                Wizard(1, 100, x, y)
     return new_player, x, y
 
 
@@ -130,7 +150,6 @@ def restart_level():
     global player, level_x, level_y, camera
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
     f = f.read().split('\n')
-    print(f)
     start_settings['level'] = f[0]
     start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
     player, level_x, level_y = generate_level(load_level(start_settings['level']))
@@ -214,7 +233,6 @@ class Magic(pygame.sprite.Sprite):
     def __init__(self, power, pos_x, pos_y, speed, vector, damage):
         super().__init__(magic_group, all_sprites)
         self.image = magic_images[power]
-        print(magic_images[power])
         self.speed = speed
         self.damage = damage
         self.vector_x = vector[0]
@@ -230,7 +248,6 @@ class Magic(pygame.sprite.Sprite):
             self.kill()
         elif pygame.sprite.spritecollideany(self, wall_group):
             self.kill()
-        print(self.rect)
 
 
 class Exit(pygame.sprite.Sprite):
@@ -353,10 +370,12 @@ class Wizard(pygame.sprite.Sprite): # почему ты не работаешь?
 
     def update(self):
         self.update_counter += 1
-        if self.update_counter % 2 == 0:
+        if self.update_counter % 8 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
-        if self.update_counter % self.frequency == 0:
+        if abs(player.rect.x - self.rect.x) < 400 and\
+                abs(player.rect.y - self.rect.y) < 400 and\
+                self.update_counter % self.frequency == 0:
             if self.power == 1:
                 Magic(self.power,
                       self.rect.x,
@@ -518,7 +537,9 @@ while running:
     wall_group.draw(screen)
     tiles_group.draw(screen)
     passive_group.draw(screen)
+    enemy_group.draw(screen)
     player_group.draw(screen)
+    magic_group.draw(screen)
     hud_sprites.draw(screen)
 
     draw_hud_text()
