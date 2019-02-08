@@ -124,7 +124,14 @@ def draw_hud_text():
 
 
 def restart_level():
-    pass
+    global player, level_x, level_y, camera, f
+    f = open('data/save_load.txt', encoding='UTF8', mode='r')
+    f = f.read()
+    print(f)
+    start_settings['level'] = f[0]
+    start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+    player, level_x, level_y = generate_level(load_level(start_settings['level']))
+    camera = Camera((level_x, level_y))
 
 
 tile_images = {'wall': load_image('wall.jpg'),
@@ -190,14 +197,15 @@ class Exit(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x,
                                                tile_height * pos_y)
 
-    def update(self, *args):
+    def update(self):
         if pygame.sprite.spritecollideany(self, player_group):
             f = open('data/save_load.txt', mode='w')
-            data = ['{}level'.format(str(int(start_settings['level'][0]) + 1)),
+            data = ['{}level.txt'.format(str(int(start_settings['level'][0]) + 1)),
                     str(player.coins),
                     str(player.hp),
                     str(player.score)]
-            f.writelines(data)
+            f.writelines('\n'.join(data))
+            restart_level()
             print('NextLevel')
 
 
