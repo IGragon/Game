@@ -3,7 +3,7 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT######################TTTT
 TTTT#H.E.................#TTTT
-TTTT#....................#TTTT
+TTTT#......L.............#TTTT
 TTTT#....................#TTTT
 TTTT#.................Z..#TTTT
 TTTT#....................#TTTT

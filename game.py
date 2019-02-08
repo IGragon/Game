@@ -23,7 +23,7 @@ tiles_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
-spell_group = pygame.sprite.Group()
+magic_group = pygame.sprite.Group()
 passive_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
@@ -78,6 +78,9 @@ def generate_level(level):
             elif level[y][x] == 'E':
                 Tile('empty', x, y)
                 Exit(x, y)
+            elif level[y][x] == 'L':
+                Tile('empty', x, y)
+                Wizard(1, 50, x, y)
     return new_player, x, y
 
 
@@ -138,6 +141,23 @@ tile_images = {'wall': load_image('wall.jpg'),
                'empty': load_image('floor.jpg'),
                'lava': load_image('lava.png')}
 
+magic_images = {1: load_image('magic_ball1.png'),
+                2: load_image('magic_ball2.png'),
+                3: load_image('magic_ball3.png')}
+
+wizard_frames = {1: [load_image('WizardEasy1.png'),
+                     load_image('WizardEasy2.png'),
+                     load_image('WizardEasy3.png'),
+                     load_image('WizardEasy4.png')],
+                 2: [load_image('WizardHard1.png'),
+                     load_image('WizardHard2.png'),
+                     load_image('WizardHard3.png'),
+                     load_image('WizardHard4.png')],
+                 3: [load_image('WizardBoss1.png'),
+                     load_image('WizardBoss2.png'),
+                     load_image('WizardBoss3.png'),
+                     load_image('WizardBoss4.png')]}
+
 tile_width = tile_height = 100
 
 
@@ -191,36 +211,25 @@ class Coin(pygame.sprite.Sprite):
 
 
 class Magic(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, speed):
-        super().__init__(passive_group, all_sprites)
-        self.frames = []
-        self.cut_sheet(load_image('coin.png'), 6, 1)
-        self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
-        self.rect = self.image.get_rect().move(tile_width * pos_x,
-                                               tile_height * pos_y)
+    def __init__(self, power, pos_x, pos_y, speed, vector, damage):
+        super().__init__(magic_group, all_sprites)
+        self.image = magic_images[power]
+        self.speed = speed
+        self.damage = damage
+        self.vector_x = vector[0]
+        self.vector_y = vector[1]
+        self.rect = self.image.get_rect().move(pos_x,
+                                               pos_y)
         self.update_counter = 0
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
 
     def update(self, *args):
         self.update_counter += 1
-        if pygame.sprite.spritecollideany(self, player_group):
-            player.coins += 1
-            player.score += 10
 
+        if pygame.sprite.spritecollideany(self, player_group):
+            player.hp -= self.damage
             self.kill()
-        else:
-            if self.update_counter % 2 == 0:
-                self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-                self.image = self.frames[self.cur_frame]
+        elif pygame.sprite.spritecollideany(self, wall_group):
+            self.kill()
 
 
 class Exit(pygame.sprite.Sprite):
@@ -329,6 +338,51 @@ class HPHud(pygame.sprite.Sprite):
                                                10)
 
 
+class Wizard(pygame.sprite.Sprite):
+    def __init__(self, power, frequency, pos_x, pos_y):
+        super().__init__(enemy_group, all_sprites)
+        self.frames = wizard_frames[power]
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.power = power
+        self.damage = power * 2
+        self.frequency = frequency
+        self.update_counter = 0
+
+    def update(self):
+        self.update_counter += 1
+        if self.update_counter % 2 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+        if self.update_counter % self.frequency == 0:
+            if self.power == 1:
+                Magic(self.power,
+                      self.rect.x,
+                      self.rect.y - 100,
+                      200,
+                      (0, -1),
+                      self.damage)
+                Magic(self.power,
+                      self.rect.x,
+                      self.rect.y + 100,
+                      200,
+                      (0, 1),
+                      self.damage)
+                Magic(self.power,
+                      self.rect.x + 100,
+                      self.rect.y,
+                      200,
+                      (1, 0),
+                      self.damage)
+                Magic(self.power,
+                      self.rect.x - 100,
+                      self.rect.y,
+                      200,
+                      (-1, 0),
+                      self.damage)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -354,7 +408,7 @@ class Player(pygame.sprite.Sprite):
                              load_image('HeroIdle10.png')]
         self.cur_frame = 0
         self.image = self.frames_stand[self.cur_frame]
-        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.update_counter = 0
         self.coins = start_settings['player_stats'][0]
         CoinHud()
@@ -445,11 +499,18 @@ while running:
 
     camera.update(player)
 
+    for magic in magic_group:
+        magic.rect.x += (magic.speed / FPS) * magic.vector_x
+        magic.rect.y += (magic.speed / FPS) * magic.vector_y
+
     for sprite in passive_group:
         sprite.update()
 
     for sprite in all_sprites:
         camera.apply(sprite)
+
+    for enemy in enemy_group:
+        enemy.update()
 
     screen.fill(pygame.Color(0, 0, 0))
     wall_group.draw(screen)
