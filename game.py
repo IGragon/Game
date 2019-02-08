@@ -214,6 +214,7 @@ class Magic(pygame.sprite.Sprite):
     def __init__(self, power, pos_x, pos_y, speed, vector, damage):
         super().__init__(magic_group, all_sprites)
         self.image = magic_images[power]
+        print(magic_images[power])
         self.speed = speed
         self.damage = damage
         self.vector_x = vector[0]
@@ -222,14 +223,14 @@ class Magic(pygame.sprite.Sprite):
                                                pos_y)
         self.update_counter = 0
 
-    def update(self, *args):
+    def update(self):
         self.update_counter += 1
-
         if pygame.sprite.spritecollideany(self, player_group):
             player.hp -= self.damage
             self.kill()
         elif pygame.sprite.spritecollideany(self, wall_group):
             self.kill()
+        print(self.rect)
 
 
 class Exit(pygame.sprite.Sprite):
@@ -338,7 +339,7 @@ class HPHud(pygame.sprite.Sprite):
                                                10)
 
 
-class Wizard(pygame.sprite.Sprite):
+class Wizard(pygame.sprite.Sprite): # почему ты не работаешь?
     def __init__(self, power, frequency, pos_x, pos_y):
         super().__init__(enemy_group, all_sprites)
         self.frames = wizard_frames[power]
@@ -499,10 +500,6 @@ while running:
 
     camera.update(player)
 
-    for magic in magic_group:
-        magic.rect.x += (magic.speed / FPS) * magic.vector_x
-        magic.rect.y += (magic.speed / FPS) * magic.vector_y
-
     for sprite in passive_group:
         sprite.update()
 
@@ -511,6 +508,11 @@ while running:
 
     for enemy in enemy_group:
         enemy.update()
+
+    for magic in magic_group:
+        magic.rect.x += (magic.speed / FPS) * magic.vector_x
+        magic.rect.y += (magic.speed / FPS) * magic.vector_y
+        magic.update()
 
     screen.fill(pygame.Color(0, 0, 0))
     wall_group.draw(screen)
