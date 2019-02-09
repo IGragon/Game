@@ -3,8 +3,8 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT######################TTTT
 TTTT#H.E.................#TTTT
-TTTT#......L.............#TTTT
 TTTT#....................#TTTT
+TTTT#......L.............#TTTT
 TTTT#.................Z..#TTTT
 TTTT#....................#TTTT
 TTTT#....................#TTTT
