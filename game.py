@@ -3,26 +3,6 @@ import sys
 import pygame
 import random
 
-    # сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-    # сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-# сделать обработчик для средних и тяжелых магов
-
-
 pygame.init()
 pygame.key.set_repeat(200, 70)
 
@@ -46,6 +26,7 @@ exit_group = pygame.sprite.Group()
 magic_group = pygame.sprite.Group()
 passive_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+buttons = pygame.sprite.Group()
 
 
 def load_image(name, color_key=None):
@@ -103,6 +84,12 @@ def generate_level(level):
             elif level[y][x] == 'L':
                 Tile('empty', x, y)
                 Wizard(1, 100, x, y)
+            elif level[y][x] == 'D':
+                Tile('empty', x, y)
+                Wizard(2, 250, x, y)
+            elif level[y][x] == 'B':
+                Tile('empty', x, y)
+                Wizard(3, 40, x, y)
     return new_player, x, y
 
 
@@ -112,19 +99,186 @@ def terminate():
 
 
 def start_screen():
-    fon = pygame.transform.scale(load_image('fon.png'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
+    pygame.mouse.set_visible(True)
+    for button in buttons:
+        button.kill()
+    background = load_image('fon.png')
+    screen.blit(background, (0, 0))
+    NewGame(HEIGHT / 2 - 40)
+    Continue(HEIGHT / 2, 1)
+    Rules(HEIGHT / 2 + 40)
+    Back(HEIGHT / 2 + 80, 0)
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                return 1
-            elif event.type == pygame.KEYDOWN:
-                return 2
+                for button in buttons:
+                    if button.rect.collidepoint(event.pos):
+                        button.action()
+                        return
+
+        for button in buttons:
+            button.update()
+
+        screen.blit(background, (0, 0))
+        buttons.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
+
+
+def game_screen(mode):
+    global player, camera, level_x, level_y
+
+    if mode == 0:
+        f = open('data/default_load.txt')
+        save = open('data/save_load.txt', mode='w')
+        save.writelines(f.readlines())
+        f.seek(0)
+        f = list(map(lambda x: x.strip(), f.readlines()))
+        start_settings['level'] = f[0]
+        start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+        player, level_x, level_y = generate_level(load_level(start_settings['level']))
+        camera = Camera((level_x, level_y))
+        save.close()
+    elif mode == 1:
+        f = open('data/save_load.txt')
+        f = list(map(lambda x: x.strip(), f.readlines()))
+        start_settings['level'] = f[0]
+        start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+        player, level_x, level_y = generate_level(load_level(start_settings['level']))
+        camera = Camera((level_x, level_y))
+
+    pygame.mouse.set_visible(False)
+
+    running = True
+    turn = False
+
+    while running:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == 27:
+                    pause_screen()
+        if player.hp > 0:
+            if pygame.key.get_pressed()[pygame.K_LEFT]:
+                turn = True
+                player.rect.x -= SPEED / FPS
+                if pygame.sprite.spritecollideany(player, wall_group):
+                    player.rect.x += SPEED / FPS
+                player.update('move', turn)
+            if pygame.key.get_pressed()[pygame.K_RIGHT]:
+                turn = False
+                player.rect.x += SPEED / FPS
+                if pygame.sprite.spritecollideany(player, wall_group):
+                    player.rect.x -= SPEED / FPS
+                player.update('move', turn)
+            if pygame.key.get_pressed()[pygame.K_UP]:
+                player.rect.y -= SPEED / FPS
+                if pygame.sprite.spritecollideany(player, wall_group):
+                    player.rect.y += SPEED / FPS
+                player.update('move', turn)
+            if pygame.key.get_pressed()[pygame.K_DOWN]:
+                player.rect.y += SPEED / FPS
+                if pygame.sprite.spritecollideany(player, wall_group):
+                    player.rect.y -= SPEED / FPS
+                player.update('move', turn)
+            if not (pygame.key.get_pressed()[pygame.K_DOWN] or
+                    pygame.key.get_pressed()[pygame.K_UP] or
+                    pygame.key.get_pressed()[pygame.K_RIGHT] or
+                    pygame.key.get_pressed()[pygame.K_LEFT]):
+                player.update('stand')
+        else:
+            player.update('dead')
+
+        camera.update(player)
+
+        for sprite in passive_group:
+            sprite.update()
+
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
+        for enemy in enemy_group:
+            enemy.update()
+
+        for magic in magic_group:
+            magic.rect.x += (magic.speed / FPS) * magic.vector_x
+            magic.rect.y += (magic.speed / FPS) * magic.vector_y
+            magic.update()
+
+        screen.fill(pygame.Color(0, 0, 0))
+        wall_group.draw(screen)
+        tiles_group.draw(screen)
+        passive_group.draw(screen)
+        enemy_group.draw(screen)
+        player_group.draw(screen)
+        magic_group.draw(screen)
+        hud_sprites.draw(screen)
+
+        draw_hud_text()
+
+        pygame.display.flip()
+
+        clock.tick(FPS)
+
+
+def pause_screen():
+    pygame.mouse.set_visible(True)
+    for button in buttons:
+        button.kill()
+    background = load_image('pause.jpg')
+    screen.blit(background, (0, 0))
+    Continue(HEIGHT / 2 - 40, 0)
+    Back(HEIGHT / 2 + 40, 1)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for button in buttons:
+                    if button.rect.collidepoint(event.pos):
+                        button.action()
+                        return
+
+        for button in buttons:
+            button.update()
+
+        screen.blit(background, (0, 0))
+        buttons.draw(screen)
+        pygame.display.flip()
+
+
+def rules_screen():
+    pygame.mouse.set_visible(True)
+    for button in buttons:
+        button.kill()
+    background = load_image('rules.jpg')
+    screen.blit(background, (0, 0))
+    Back(HEIGHT - 40, 1)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for button in buttons:
+                    if button.rect.collidepoint(event.pos):
+                        button.action()
+                        return
+
+        for button in buttons:
+            button.update()
+
+        screen.blit(background, (0, 0))
+        buttons.draw(screen)
+        pygame.display.flip()
 
 
 def draw_hud_text():
@@ -180,6 +334,106 @@ wizard_frames = {1: [load_image('WizardEasy1.png'),
                      load_image('WizardBoss4.png')]}
 
 tile_width = tile_height = 100
+
+
+class Back(pygame.sprite.Sprite):
+    image = load_image('exit.png')
+    active = load_image('exit_active.png')
+
+    def __init__(self, pos_y, code):
+        super().__init__(buttons)
+        self.code = code
+        self.image = Back.image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
+
+    def update(self):
+        xm, ym = pygame.mouse.get_pos()
+        x, y = self.rect[0], self.rect[1]
+        delta_x, delta_y = self.rect[2], self.rect[3]
+        if x < xm < x + delta_x and y < ym < y + delta_y:
+            self.image = Back.active
+        else:
+            self.image = Back.image
+
+    def action(self):
+        if self.code == 0:
+            terminate()
+        elif self.code == 1:
+            start_screen()
+
+
+class NewGame(pygame.sprite.Sprite):
+    image = load_image('new_game.png')
+    active = load_image('new_game_active.png')
+
+    def __init__(self, pos_y):
+        super().__init__(buttons)
+        self.image = NewGame.image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
+
+    def update(self):
+        xm, ym = pygame.mouse.get_pos()
+        x, y = self.rect[0], self.rect[1]
+        delta_x, delta_y = self.rect[2], self.rect[3]
+        if x < xm < x + delta_x and y < ym < y + delta_y:
+            self.image = NewGame.active
+        else:
+            self.image = NewGame.image
+
+    def action(self):
+        game_screen(0)
+
+
+class Rules(pygame.sprite.Sprite):
+    image = load_image('rules.png')
+    active = load_image('rules_active.png')
+
+    def __init__(self, pos_y):
+        super().__init__(buttons)
+        self.image = Rules.image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
+
+    def update(self):
+        xm, ym = pygame.mouse.get_pos()
+        x, y = self.rect[0], self.rect[1]
+        delta_x, delta_y = self.rect[2], self.rect[3]
+        if x < xm < x + delta_x and y < ym < y + delta_y:
+            self.image = Rules.active
+        else:
+            self.image = Rules.image
+
+    def action(self):
+        rules_screen()
+
+
+class Continue(pygame.sprite.Sprite):
+    image = load_image('save.png')
+    active = load_image('save_active.png')
+
+    def __init__(self, pos_y, code):
+        super().__init__(buttons)
+        self.code = code
+        self.image = Continue.image
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
+
+    def update(self):
+        xm, ym = pygame.mouse.get_pos()
+        x, y = self.rect[0], self.rect[1]
+        delta_x, delta_y = self.rect[2], self.rect[3]
+        if x < xm < x + delta_x and y < ym < y + delta_y:
+            self.image = Continue.active
+        else:
+            self.image = Continue.image
+
+    def action(self):
+        if self.code == 0:
+            return
+        elif self.code == 1:
+            game_screen(1)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -307,7 +561,8 @@ class Fire(pygame.sprite.Sprite):
             player.hp -= 1
         else:
             if self.update_counter % 2 == 0:
-                self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+                self.cur_frame = (self.cur_frame + 1) %\
+                                 len(self.frames)
                 self.image = self.frames[self.cur_frame]
 
 
@@ -368,7 +623,8 @@ class Wizard(pygame.sprite.Sprite):
         self.frames = wizard_frames[power]
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.image.get_rect().move(tile_width * pos_x,
+                                               tile_height * pos_y)
         self.power = power
         self.damage = power * 2
         self.frequency = frequency
@@ -412,6 +668,118 @@ class Wizard(pygame.sprite.Sprite):
                           (-1, 0),
                           self.damage)
                     self.f = not self.f
+            elif self.power == 2:
+                if self.f:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (0, -1),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (0, 1),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (1, 0),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (-1, 0),
+                          self.damage)
+                    self.f = not self.f
+                else:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (1, -1),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (1, 1),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (-1, 1),
+                          self.damage)
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          100,
+                          (-1, -1),
+                          self.damage)
+                    self.f = not self.f
+            elif self.power == 3:
+                if self.f == 0:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (0, -1),
+                          self.damage)
+                elif self.f == 1:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (1, 0),
+                          self.damage)
+                elif self.f == 2:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (0, 1),
+                          self.damage)
+                elif self.f == 3:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (-1, 0),
+                          self.damage)
+                elif self.f == 4:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (1, -1),
+                          self.damage)
+                elif self.f == 5:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (1, 1),
+                          self.damage)
+                elif self.f == 6:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (-1, 1),
+                          self.damage)
+                elif self.f == 7:
+                    Magic(self.power,
+                          self.rect.x,
+                          self.rect.y,
+                          random.randint(250, 350),
+                          (-1, -1),
+                          self.damage)
+                    self.f = -1
+                self.f += 1
 
 
 class Player(pygame.sprite.Sprite):
@@ -485,7 +853,6 @@ class Player(pygame.sprite.Sprite):
                     player, level_x, level_y = generate_level(load_level(start_settings['level']))
 
 
-
 class Camera:
     def __init__(self, field_size):
         self.dx = 0
@@ -501,90 +868,6 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-mode = start_screen()
-if mode == 1:
-    f = open('data/default_load.txt')
-    f = list(map(lambda x: x.strip(), f.readlines()))
-    start_settings['level'] = f[0]
-    start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
-    player, level_x, level_y = generate_level(load_level(start_settings['level']))
-    camera = Camera((level_x, level_y))
-elif mode == 2:
-    f = open('data/save_load.txt')
-    f = list(map(lambda x: x.strip(), f.readlines()))
-    start_settings['level'] = f[0]
-    start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
-    player, level_x, level_y = generate_level(load_level(start_settings['level']))
-    camera = Camera((level_x, level_y))
-
-running = True
-turn = False
-
-while running:
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    if player.hp > 0:
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            turn = True
-            player.rect.x -= SPEED / FPS
-            if pygame.sprite.spritecollideany(player, wall_group):
-                player.rect.x += SPEED / FPS
-            player.update('move', turn)
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
-            turn = False
-            player.rect.x += SPEED / FPS
-            if pygame.sprite.spritecollideany(player, wall_group):
-                player.rect.x -= SPEED / FPS
-            player.update('move', turn)
-        if pygame.key.get_pressed()[pygame.K_UP]:
-            player.rect.y -= SPEED / FPS
-            if pygame.sprite.spritecollideany(player, wall_group):
-                player.rect.y += SPEED / FPS
-            player.update('move', turn)
-        if pygame.key.get_pressed()[pygame.K_DOWN]:
-            player.rect.y += SPEED / FPS
-            if pygame.sprite.spritecollideany(player, wall_group):
-                player.rect.y -= SPEED / FPS
-            player.update('move', turn)
-        if not(pygame.key.get_pressed()[pygame.K_DOWN] or
-               pygame.key.get_pressed()[pygame.K_UP] or
-               pygame.key.get_pressed()[pygame.K_RIGHT] or
-               pygame.key.get_pressed()[pygame.K_LEFT]):
-            player.update('stand')
-    else:
-        player.update('dead')
-
-    camera.update(player)
-
-    for sprite in passive_group:
-        sprite.update()
-
-    for sprite in all_sprites:
-        camera.apply(sprite)
-
-    for enemy in enemy_group:
-        enemy.update()
-
-    for magic in magic_group:
-        magic.rect.x += (magic.speed / FPS) * magic.vector_x
-        magic.rect.y += (magic.speed / FPS) * magic.vector_y
-        magic.update()
-
-    screen.fill(pygame.Color(0, 0, 0))
-    wall_group.draw(screen)
-    tiles_group.draw(screen)
-    passive_group.draw(screen)
-    enemy_group.draw(screen)
-    player_group.draw(screen)
-    magic_group.draw(screen)
-    hud_sprites.draw(screen)
-
-    draw_hud_text()
-
-    pygame.display.flip()
-
-    clock.tick(FPS)
+start_screen()
 
 terminate()
