@@ -271,6 +271,34 @@ def pause_screen():
         pygame.display.flip()
 
 
+def congratulation_screen():
+    pygame.mouse.set_visible(True)
+    for button in buttons:
+        button.kill()
+    background = load_image('pause.jpg')
+    screen.blit(background, (0, 0))
+    Continue(HEIGHT / 2 - 40, 0)
+    Back(HEIGHT / 2 + 40, 1)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for button in buttons:
+                    if button.rect.collidepoint(event.pos):
+                        button.action()
+                        return
+
+        for button in buttons:
+            button.update()
+
+        screen.blit(background, (0, 0))
+        buttons.draw(screen)
+        pygame.display.flip()
+
+
 def rules_screen():
     pygame.mouse.set_visible(True)
     for button in buttons:
@@ -558,6 +586,7 @@ class Fire(pygame.sprite.Sprite):
         self.cut_sheet(load_image('fire_sheet.png'), 8, 4)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(tile_width * pos_x,
                                                tile_height * pos_y)
         self.update_counter = 0
@@ -573,7 +602,7 @@ class Fire(pygame.sprite.Sprite):
 
     def update(self, *args):
         self.update_counter += 1
-        if pygame.sprite.spritecollideany(self, player_group) and\
+        if pygame.sprite.collide_mask(self, player) and\
                 self.update_counter % 50 == 0:
             player.hp -= 1
         else:
@@ -581,6 +610,7 @@ class Fire(pygame.sprite.Sprite):
                 self.cur_frame = (self.cur_frame + 1) %\
                                  len(self.frames)
                 self.image = self.frames[self.cur_frame]
+                self.mask = pygame.mask.from_surface(self.image)
 
 
 class HealMagic(pygame.sprite.Sprite):
@@ -613,7 +643,7 @@ class HealMagic(pygame.sprite.Sprite):
             if self.heal_counter == 3:
                 self.kill()
         else:
-            if self.update_counter % 2 == 0:
+            if self.update_counter % 3 == 0:
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames)
                 self.image = self.frames[self.cur_frame]
 

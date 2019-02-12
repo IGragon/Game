@@ -9,7 +9,7 @@ TTTT#..........M.....F...#TTTT
 TTTT#..F.................#TTTT
 TTTT#....L...............#TTTT
 TTTT#..........M.........#TTTT
-TTTT#..........B.......F.#TTTT
+TTTT#..................F.#TTTT
 TTTT#................L...#TTTT
 TTTT#..........M.........#TTTT
 TTTT#....F...............#TTTT
@@ -20,8 +20,8 @@ TTTT#................L...#TTTT
 TTTT#..........M...F.....#TTTT
 TTTT#....................#TTTT
 TTTT#....L...............#TTTT
-TTTT#.....F....M.........#TTTT
-TTTT#...................E#TTTT
+TTTT#C....F....M.........#TTTT
+TTTT#CC.................E#TTTT
 TTTT######################TTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
