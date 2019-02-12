@@ -2,6 +2,7 @@ import os
 import sys
 import pygame
 import random
+from random import randint as rint
 
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -26,6 +27,7 @@ exit_group = pygame.sprite.Group()
 magic_group = pygame.sprite.Group()
 passive_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+particles = pygame.sprite.Group()
 buttons = pygame.sprite.Group()
 
 
@@ -163,6 +165,17 @@ def game_screen(mode):
             if event.type == pygame.KEYDOWN:
                 if event.key == 27:
                     pause_screen()
+                if event.key == 120:
+                    if pygame.sprite.spritecollideany(player,
+                                                      enemy_group):
+                        enemy = pygame.sprite.spritecollideany(player,
+                                                               enemy_group)
+                        enemy.hp -= 4
+                        for _ in range(3):
+                            Particle((enemy.rect[0] + 50,
+                                      enemy.rect[1] + 50),
+                                     rint(-5, 6),
+                                     rint(-5, 6))
         if player.hp > 0:
             if pygame.key.get_pressed()[pygame.K_LEFT]:
                 turn = True
@@ -205,6 +218,9 @@ def game_screen(mode):
         for enemy in enemy_group:
             enemy.update()
 
+        for particle in particles:
+            particle.update()
+
         for magic in magic_group:
             magic.rect.x += (magic.speed / FPS) * magic.vector_x
             magic.rect.y += (magic.speed / FPS) * magic.vector_y
@@ -217,6 +233,7 @@ def game_screen(mode):
         enemy_group.draw(screen)
         player_group.draw(screen)
         magic_group.draw(screen)
+        particles.draw(screen)
         hud_sprites.draw(screen)
 
         draw_hud_text()
@@ -601,6 +618,28 @@ class HealMagic(pygame.sprite.Sprite):
                 self.image = self.frames[self.cur_frame]
 
 
+class Particle(pygame.sprite.Sprite):
+    fire = [load_image("spark.png")]
+    for scale in (5, 10, 15):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(particles, all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.update_counter = 0
+
+    def update(self):
+        self.update_counter += 1
+        if self.update_counter % 3 == 0:
+            self.rect.x += self.velocity[0]
+            self.rect.y += self.velocity[1]
+        if self.update_counter >= 25:
+            self.kill()
+
+
 class CoinHud(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(hud_sprites)
@@ -630,12 +669,17 @@ class Wizard(pygame.sprite.Sprite):
         self.frequency = frequency
         self.update_counter = 0
         self.f = True
+        self.hp = power * 20
+        self.score = power * 1000 if self.power < 3 else 5000
 
     def update(self):
         self.update_counter += 1
         if self.update_counter % 8 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
+        if self.hp <= 0:
+            self.kill()
+            player.score += self.score
         if abs(player.rect.x - self.rect.x) < 400 and\
                 abs(player.rect.y - self.rect.y) < 400 and\
                 self.update_counter % (self.frequency // 2) == 0:
