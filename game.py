@@ -92,6 +92,15 @@ def generate_level(level):
             elif level[y][x] == 'B':
                 Tile('empty', x, y)
                 Wizard(3, 40, x, y)
+            elif level[y][x] == 'Z':
+                Tile('empty', x, y)
+                Poison(x, y, 1)
+            elif level[y][x] == 'S':
+                Tile('empty', x, y)
+                Poison(x, y, 2)
+            elif level[y][x] == 'X':
+                Tile('empty', x, y)
+                Poison(x, y, 3)
     return new_player, x, y
 
 
@@ -361,6 +370,10 @@ tile_images = {'wall': load_image('wall.jpg'),
                'empty': load_image('floor.jpg'),
                'lava': load_image('lava.png')}
 
+potion_images = {1: load_image('heal_potion.png'),
+                 2: load_image('speed_potion.png'),
+                 3: load_image('fist.png')}
+
 magic_images = {1: load_image('magic_ball1.png'),
                 2: load_image('magic_ball2.png'),
                 3: load_image('magic_ball3.png')}
@@ -531,6 +544,30 @@ class Coin(pygame.sprite.Sprite):
                 self.image = self.frames[self.cur_frame]
 
 
+class Poison(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, code):
+        super().__init__(passive_group, all_sprites)
+        self.code = code
+        self.image = potion_images[code]
+        self.rect = self.image.get_rect().move(tile_width * pos_x,
+                                               tile_height * pos_y)
+        self.update_counter = 0
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def update(self):
+        self.update_counter += 1
+        if pygame.sprite.collide_mask(self, player):
+            if self.code == 1:
+                player.heal_potion += 1
+                self.kill()
+            elif self.code == 2:
+                player.speed_potion += 1
+                self.kill()
+            else:
+                player.damage_increasing += 1
+                self.kill()
+
+
 class Magic(pygame.sprite.Sprite):
     def __init__(self, power, pos_x, pos_y, speed, vector, damage):
         super().__init__(magic_group, all_sprites)
@@ -602,12 +639,12 @@ class Fire(pygame.sprite.Sprite):
 
     def update(self, *args):
         self.update_counter += 1
-        if pygame.sprite.collide_mask(self, player) and\
+        if pygame.sprite.collide_mask(self, player) and \
                 self.update_counter % 50 == 0:
             player.hp -= 1
         else:
             if self.update_counter % 2 == 0:
-                self.cur_frame = (self.cur_frame + 1) %\
+                self.cur_frame = (self.cur_frame + 1) % \
                                  len(self.frames)
                 self.image = self.frames[self.cur_frame]
                 self.mask = pygame.mask.from_surface(self.image)
@@ -636,7 +673,7 @@ class HealMagic(pygame.sprite.Sprite):
 
     def update(self, *args):
         self.update_counter += 1
-        if pygame.sprite.spritecollideany(self, player_group) and\
+        if pygame.sprite.spritecollideany(self, player_group) and \
                 self.update_counter % 70 == 0:
             player.hp += 1
             self.heal_counter += 1
@@ -710,8 +747,8 @@ class Wizard(pygame.sprite.Sprite):
         if self.hp <= 0:
             self.kill()
             player.score += self.score
-        if abs(player.rect.x - self.rect.x) < 400 and\
-                abs(player.rect.y - self.rect.y) < 400 and\
+        if abs(player.rect.x - self.rect.x) < 400 and \
+                abs(player.rect.y - self.rect.y) < 400 and \
                 self.update_counter % (self.frequency // 2) == 0:
             if self.power == 1:
                 if self.f:
@@ -860,15 +897,15 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.frames_walk = [load_image('HeroWalk1.png'),
-                             load_image('HeroWalk2.png'),
-                             load_image('HeroWalk3.png'),
-                             load_image('HeroWalk4.png'),
-                             load_image('HeroWalk5.png'),
-                             load_image('HeroWalk6.png'),
-                             load_image('HeroWalk7.png'),
-                             load_image('HeroWalk8.png'),
-                             load_image('HeroWalk9.png'),
-                             load_image('HeroWalk10.png')]
+                            load_image('HeroWalk2.png'),
+                            load_image('HeroWalk3.png'),
+                            load_image('HeroWalk4.png'),
+                            load_image('HeroWalk5.png'),
+                            load_image('HeroWalk6.png'),
+                            load_image('HeroWalk7.png'),
+                            load_image('HeroWalk8.png'),
+                            load_image('HeroWalk9.png'),
+                            load_image('HeroWalk10.png')]
         self.frames_stand = [load_image('HeroIdle1.png'),
                              load_image('HeroIdle2.png'),
                              load_image('HeroIdle3.png'),
@@ -898,9 +935,9 @@ class Player(pygame.sprite.Sprite):
         self.hp = start_settings['player_stats'][1]
         HPHud()
         self.score = start_settings['player_stats'][2]
-        self.heal_poison = 0
-        self.speed_poison = 0
-        self.damage_increase = 0
+        self.heal_potion = 0
+        self.speed_potion = 0
+        self.damage_increasing = 0
         self.dead_start = True
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -909,7 +946,8 @@ class Player(pygame.sprite.Sprite):
         if self.update_counter % 3 == 0:
             if action == 'move':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_walk)
-                self.image = self.frames_walk[self.cur_frame] if not left else pygame.transform.flip(self.frames_walk[self.cur_frame], True, False)
+                self.image = self.frames_walk[self.cur_frame] if not left else pygame.transform.flip(
+                    self.frames_walk[self.cur_frame], True, False)
             if action == 'stand':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_stand)
                 self.image = self.frames_stand[self.cur_frame]
