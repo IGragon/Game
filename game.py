@@ -91,7 +91,7 @@ def generate_level(level):
                 Wizard(2, 250, x, y)
             elif level[y][x] == 'B':
                 Tile('empty', x, y)
-                Wizard(3, 40, x, y)
+                Wizard(3, 20, x, y)
             elif level[y][x] == 'Z':
                 Tile('empty', x, y)
                 Poison(x, y, 1)
@@ -606,9 +606,9 @@ class Exit(pygame.sprite.Sprite):
                     str(player.coins),
                     str(player.hp),
                     str(player.score),
-                    str(player.heal_poison),
-                    str(player.speed_poison),
-                    str(player.damage_increase)]
+                    str(player.heal_potion),
+                    str(player.speed_potion),
+                    str(player.damage_increasing)]
             f.writelines('\n'.join(data))
             f.close()
             for sprite in all_sprites:
