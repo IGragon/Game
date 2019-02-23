@@ -94,13 +94,13 @@ def generate_level(level):
                 Wizard(3, 40, x, y)
             elif level[y][x] == 'Z':
                 Tile('empty', x, y)
-                Poison(x, y, 1)
+                Potion(x, y, 1)
             elif level[y][x] == 'S':
                 Tile('empty', x, y)
-                Poison(x, y, 2)
+                Potion(x, y, 2)
             elif level[y][x] == 'X':
                 Tile('empty', x, y)
-                Poison(x, y, 3)
+                Potion(x, y, 3)
     return new_player, x, y
 
 
@@ -544,7 +544,7 @@ class Coin(pygame.sprite.Sprite):
                 self.image = self.frames[self.cur_frame]
 
 
-class Poison(pygame.sprite.Sprite):
+class Potion(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, code):
         super().__init__(passive_group, all_sprites)
         self.code = code
@@ -606,9 +606,9 @@ class Exit(pygame.sprite.Sprite):
                     str(player.coins),
                     str(player.hp),
                     str(player.score),
-                    str(player.heal_poison),
-                    str(player.speed_poison),
-                    str(player.damage_increase)]
+                    str(player.heal_potion),
+                    str(player.speed_potion),
+                    str(player.damage_increasing)]
             f.writelines('\n'.join(data))
             f.close()
             for sprite in all_sprites:
