@@ -91,7 +91,7 @@ def generate_level(level):
                 Wizard(2, 250, x, y)
             elif level[y][x] == 'B':
                 Tile('empty', x, y)
-                Wizard(3, 40, x, y)
+                Wizard(3, 20, x, y)
             elif level[y][x] == 'Z':
                 Tile('empty', x, y)
                 Potion(x, y, 1)
