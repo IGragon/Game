@@ -2,6 +2,7 @@ import os
 import sys
 import pygame
 import random
+import time
 from random import randint as rint
 
 pygame.init()
@@ -10,7 +11,6 @@ pygame.key.set_repeat(200, 70)
 FPS = 50
 WIDTH = 1000
 HEIGHT = 700
-SPEED = 300
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -29,6 +29,7 @@ passive_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 particles = pygame.sprite.Group()
 buttons = pygame.sprite.Group()
+speed_up = []
 
 
 def load_image(name, color_key=None):
@@ -110,6 +111,7 @@ def terminate():
 
 
 def start_screen():
+    speed_up.clear()
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
@@ -171,10 +173,10 @@ def game_screen(mode):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == 27:
                     pause_screen()
-                if event.key == 120:
+                elif event.key == 118:
                     if pygame.sprite.spritecollideany(player,
                                                       enemy_group):
                         enemy = pygame.sprite.spritecollideany(player,
@@ -185,28 +187,40 @@ def game_screen(mode):
                                       enemy.rect[1] + 50),
                                      rint(-5, 6),
                                      rint(-5, 6))
+                elif event.key == 122:
+                    if player.heal_potion:
+                        player.heal_potion -= 1
+                        player.hp += 10
+                elif event.key == 120:
+                    if player.speed_potion:
+                        player.speed_potion -= 1
+                        speed_up.append(DoubleSpeed())
+                elif event.key == 99:
+                    if player.damage_increasing:
+                        player.damage_increasing -= 1
+                        speed_up.append(DoubleSpeed())
         if player.hp > 0:
             if pygame.key.get_pressed()[pygame.K_LEFT]:
                 turn = True
-                player.rect.x -= SPEED / FPS
+                player.rect.x -= player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
-                    player.rect.x += SPEED / FPS
+                    player.rect.x += player.speed / FPS
                 player.update('move', turn)
             if pygame.key.get_pressed()[pygame.K_RIGHT]:
                 turn = False
-                player.rect.x += SPEED / FPS
+                player.rect.x += player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
-                    player.rect.x -= SPEED / FPS
+                    player.rect.x -= player.speed / FPS
                 player.update('move', turn)
             if pygame.key.get_pressed()[pygame.K_UP]:
-                player.rect.y -= SPEED / FPS
+                player.rect.y -= player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
-                    player.rect.y += SPEED / FPS
+                    player.rect.y += player.speed / FPS
                 player.update('move', turn)
             if pygame.key.get_pressed()[pygame.K_DOWN]:
-                player.rect.y += SPEED / FPS
+                player.rect.y += player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
-                    player.rect.y -= SPEED / FPS
+                    player.rect.y -= player.speed / FPS
                 player.update('move', turn)
             if not (pygame.key.get_pressed()[pygame.K_DOWN] or
                     pygame.key.get_pressed()[pygame.K_UP] or
@@ -234,6 +248,10 @@ def game_screen(mode):
             magic.rect.x += (magic.speed / FPS) * magic.vector_x
             magic.rect.y += (magic.speed / FPS) * magic.vector_y
             magic.update()
+
+        for speed in speed_up:
+            if not speed.update():
+                speed_up.remove(speed)
 
         screen.fill(pygame.Color(0, 0, 0))
         wall_group.draw(screen)
@@ -281,13 +299,18 @@ def pause_screen():
 
 
 def congratulation_screen():
+    f = open('data/save_load.txt', encoding='UTF8', mode='w')
+    default = open('data/default_load.txt', encoding='UTF8', mode='r')
+    default_s = default.read()
+    f.write(default_s)
+    f.close()
+    default.close()
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
-    background = load_image('pause.jpg')
+    background = load_image('end.jpg')
     screen.blit(background, (0, 0))
-    Continue(HEIGHT / 2 - 40, 0)
-    Back(HEIGHT / 2 + 40, 1)
+    Back(HEIGHT - 40, 1)
 
     running = True
     while running:
@@ -304,6 +327,16 @@ def congratulation_screen():
             button.update()
 
         screen.blit(background, (0, 0))
+
+        score = pygame.font.Font(None, 60)
+        score = score.render('ОЧКИ: {}'.format(player.score + 100 * player.coins + 200 * player.hp),
+                             1,
+                             pygame.Color('red'))
+        screen.blit(score, (WIDTH // 2 - (score.get_rect()[2] // 2),
+                            HEIGHT // 2,
+                            score.get_rect()[0],
+                            score.get_rect()[1]))
+
         buttons.draw(screen)
         pygame.display.flip()
 
@@ -354,14 +387,46 @@ def draw_hud_text():
                         10,
                         score.get_rect()[0],
                         score.get_rect()[1]))
+    hp_potion = pygame.font.Font(None, 75)
+    hp_potion = hp_potion.render(str(player.heal_potion),
+                                 1,
+                                 pygame.Color('white'))
+    screen.blit(hp_potion, (70,
+                            HEIGHT - 60,
+                            hp_potion.get_rect()[0],
+                            hp_potion.get_rect()[1]))
+    speed = pygame.font.Font(None, 75)
+    speed = speed.render(str(player.speed_potion),
+                         1,
+                         pygame.Color('white'))
+    screen.blit(speed, (WIDTH // 6 + 60,
+                        HEIGHT - 60,
+                        speed.get_rect()[0],
+                        speed.get_rect()[1]))
+    damage = pygame.font.Font(None, 75)
+    damage = damage.render(str(player.damage_increasing),
+                           1,
+                           pygame.Color('white'))
+    screen.blit(damage, (WIDTH // 6 * 2 + 60,
+                         HEIGHT - 60,
+                         damage.get_rect()[0],
+                         damage.get_rect()[1]))
 
 
 def restart_level():
     global player, level_x, level_y, camera
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
     f = f.read().split('\n')
+    if f[0] == '5level.txt':
+        congratulation_screen()
+        return
     start_settings['level'] = f[0]
-    start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+    start_settings['player_stats'] = [int(f[1]),
+                                      int(f[2]),
+                                      int(f[3]),
+                                      int(f[4]),
+                                      int(f[5]),
+                                      int(f[6])]
     player, level_x, level_y = generate_level(load_level(start_settings['level']))
     camera = Camera((level_x, level_y))
 
@@ -378,6 +443,12 @@ magic_images = {1: load_image('magic_ball1.png'),
                 2: load_image('magic_ball2.png'),
                 3: load_image('magic_ball3.png')}
 
+hud_images = {'coin': load_image('coin_hud.png'),
+              'hp': load_image('HPhud.png'),
+              'hp_potion': load_image('heal_potion_hud.png'),
+              'speed': load_image('speed_hud.png'),
+              'damage': load_image('damage_hud.png')}
+
 wizard_frames = {1: [load_image('WizardEasy1.png'),
                      load_image('WizardEasy2.png'),
                      load_image('WizardEasy3.png'),
@@ -392,6 +463,18 @@ wizard_frames = {1: [load_image('WizardEasy1.png'),
                      load_image('WizardBoss4.png')]}
 
 tile_width = tile_height = 100
+
+
+class DoubleSpeed:
+    def __init__(self):
+        self.start_time = time.time()
+        player.speed *= 2
+
+    def update(self):
+        if time.time() - self.start_time > 10:
+            player.speed //= 2
+            return False
+        return True
 
 
 class Back(pygame.sprite.Sprite):
@@ -707,20 +790,12 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 
-class CoinHud(pygame.sprite.Sprite):
-    def __init__(self):
+class Hud(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, image):
         super().__init__(hud_sprites)
-        self.image = load_image('coin_hud.png')
-        self.rect = self.image.get_rect().move(WIDTH - 115,
-                                               10)
-
-
-class HPHud(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__(hud_sprites)
-        self.image = load_image('HPHud.png')
-        self.rect = self.image.get_rect().move(10,
-                                               10)
+        self.image = hud_images[image]
+        self.rect = self.image.get_rect().move(pos_x,
+                                               pos_y)
 
 
 class Wizard(pygame.sprite.Sprite):
@@ -931,13 +1006,17 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.update_counter = 0
         self.coins = start_settings['player_stats'][0]
-        CoinHud()
+        Hud(WIDTH - 115, 10, 'coin')
         self.hp = start_settings['player_stats'][1]
-        HPHud()
+        Hud(10, 10, 'hp')
         self.score = start_settings['player_stats'][2]
         self.heal_potion = 0
+        Hud(10, HEIGHT - 60, 'hp_potion')
+        self.speed = 300
         self.speed_potion = 0
+        Hud(WIDTH // 6, HEIGHT - 60, 'speed')
         self.damage_increasing = 0
+        Hud(WIDTH // 6 * 2, HEIGHT - 60, 'damage')
         self.dead_start = True
         self.mask = pygame.mask.from_surface(self.image)
 

@@ -1,7 +1,7 @@
-4level.txt
-1
+1level.txt
+0
 20
-50
+0
 0
 0
 0
