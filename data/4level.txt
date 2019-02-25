@@ -2,10 +2,10 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT#######################TTTT
-TTTT#MMMM....CCHCC....MMMM#TTTT
-TTTT#MMM......C.C......MMM#TTTT
-TTTT#MM.................MM#TTTT
-TTTT#M...................M#TTTT
+TTTT#Z.......CCHCC.......Z#TTTT
+TTTT#.........C.C.........#TTTT
+TTTT#.....................#TTTT
+TTTT#.....................#TTTT
 TTTT#........#####........#TTTT
 TTTT#.....F.........F.....#TTTT
 TTTT#....F...........F....#TTTT
@@ -21,8 +21,8 @@ TTTT#.....F........F......#TTTT
 TTTT#........#####........#TTTT
 TTTT#.....................#TTTT
 TTTT#C....................#TTTT
-TTTT#CC...................#TTTT
-TTTT#CCC.................E#TTTT
+TTTT#CC..................S#TTTT
+TTTT#XCC.................E#TTTT
 TTTT#######################TTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT

@@ -30,6 +30,7 @@ player_group = pygame.sprite.Group()
 particles = pygame.sprite.Group()
 buttons = pygame.sprite.Group()
 speed_up = []
+damage_up = []
 
 
 def load_image(name, color_key=None):
@@ -151,7 +152,12 @@ def game_screen(mode):
         f.seek(0)
         f = list(map(lambda x: x.strip(), f.readlines()))
         start_settings['level'] = f[0]
-        start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+        start_settings['player_stats'] = [int(f[1]),
+                                          int(f[2]),
+                                          int(f[3]),
+                                          int(f[4]),
+                                          int(f[5]),
+                                          int(f[6])]
         player, level_x, level_y = generate_level(load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
         save.close()
@@ -159,7 +165,12 @@ def game_screen(mode):
         f = open('data/save_load.txt')
         f = list(map(lambda x: x.strip(), f.readlines()))
         start_settings['level'] = f[0]
-        start_settings['player_stats'] = [int(f[1]), int(f[2]), int(f[3])]
+        start_settings['player_stats'] = [int(f[1]),
+                                          int(f[2]),
+                                          int(f[3]),
+                                          int(f[4]),
+                                          int(f[5]),
+                                          int(f[6])]
         player, level_x, level_y = generate_level(load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
 
@@ -181,7 +192,7 @@ def game_screen(mode):
                                                       enemy_group):
                         enemy = pygame.sprite.spritecollideany(player,
                                                                enemy_group)
-                        enemy.hp -= 4
+                        enemy.hp -= player.damage
                         for _ in range(3):
                             Particle((enemy.rect[0] + 50,
                                       enemy.rect[1] + 50),
@@ -198,7 +209,7 @@ def game_screen(mode):
                 elif event.key == 99:
                     if player.damage_increasing:
                         player.damage_increasing -= 1
-                        speed_up.append(DoubleSpeed())
+                        damage_up.append(DoubleDamage())
         if player.hp > 0:
             if pygame.key.get_pressed()[pygame.K_LEFT]:
                 turn = True
@@ -471,8 +482,20 @@ class DoubleSpeed:
         player.speed *= 2
 
     def update(self):
-        if time.time() - self.start_time > 10:
+        if time.time() - self.start_time > 8:
             player.speed //= 2
+            return False
+        return True
+
+
+class DoubleDamage:
+    def __init__(self):
+        self.start_time = time.time()
+        player.damage *= 2
+
+    def update(self):
+        if time.time() - self.start_time > 8:
+            player.damage //= 2
             return False
         return True
 
@@ -811,8 +834,8 @@ class Wizard(pygame.sprite.Sprite):
         self.frequency = frequency
         self.update_counter = 0
         self.f = True
-        self.hp = power * 20
-        self.score = power * 1000 if self.power < 3 else 5000
+        self.hp = power * 20 if power < 3 else 50 * power
+        self.score = power * 1000 if self.power < 3 else 5600
 
     def update(self):
         self.update_counter += 1
@@ -1010,12 +1033,13 @@ class Player(pygame.sprite.Sprite):
         self.hp = start_settings['player_stats'][1]
         Hud(10, 10, 'hp')
         self.score = start_settings['player_stats'][2]
-        self.heal_potion = 0
+        self.heal_potion = start_settings['player_stats'][3]
         Hud(10, HEIGHT - 60, 'hp_potion')
         self.speed = 300
-        self.speed_potion = 0
+        self.speed_potion = start_settings['player_stats'][4]
         Hud(WIDTH // 6, HEIGHT - 60, 'speed')
-        self.damage_increasing = 0
+        self.damage = 4
+        self.damage_increasing = start_settings['player_stats'][5]
         Hud(WIDTH // 6 * 2, HEIGHT - 60, 'damage')
         self.dead_start = True
         self.mask = pygame.mask.from_surface(self.image)

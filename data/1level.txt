@@ -2,8 +2,8 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT######################TTTT
-TTTT#H.ZSX.............CC#TTTT
-TTTT#...................C#TTTT
+TTTT#H.................CC#TTTT
+TTTT#..................SC#TTTT
 TTTT#................L...#TTTT
 TTTT#..........M.....F...#TTTT
 TTTT#..F.................#TTTT
@@ -14,13 +14,13 @@ TTTT#................L...#TTTT
 TTTT#..........M.........#TTTT
 TTTT#....F...............#TTTT
 TTTT#....L...............#TTTT
-TTTT#..........M.........#TTTT
+TTTT#..........M........Z#TTTT
 TTTT#....................#TTTT
 TTTT#................L...#TTTT
 TTTT#..........M...F.....#TTTT
 TTTT#....................#TTTT
 TTTT#....L...............#TTTT
-TTTT#C....F....M.........#TTTT
+TTTT#CX...F....M.........#TTTT
 TTTT#CC.................E#TTTT
 TTTT######################TTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
