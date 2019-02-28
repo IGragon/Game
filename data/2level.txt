@@ -4,7 +4,7 @@ TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTT#######################TTTT
 TTTT#H....C....#.........Z#TTTT
 TTTT#..........#....C.....#TTTT
-TTTT#FFFF......#..........#TTTT
+TTTT#FFFF......#......D...#TTTT
 TTTT#..........#..........#TTTT
 TTTT#...C..........M......#TTTT
 TTTT#...................L.#TTTT
@@ -22,7 +22,7 @@ TTTT#.....................#TTTT
 TTTT#..C.L.....#...L......#TTTT
 TTTT#..........#..........#TTTT
 TTTT#FF........#...C......#TTTT
-TTTT#S...C.....#.....M...E#TTTT
+TTTT#S...C....D#.....M...E#TTTT
 TTTT#######################TTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT

@@ -7,6 +7,8 @@ from random import randint as rint
 
 pygame.init()
 pygame.key.set_repeat(200, 70)
+pygame.mixer.music.load('data/music.mp3')
+pygame.mixer.music.play(-1)
 
 FPS = 50
 WIDTH = 1000
@@ -16,6 +18,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 player = None
+door = None
 start_settings = {'level': '',
                   'player_stats': []}
 all_sprites = pygame.sprite.Group()
@@ -84,7 +87,7 @@ def generate_level(level):
                 HealMagic(x, y)
             elif level[y][x] == 'E':
                 Tile('empty', x, y)
-                Exit(x, y)
+                door = Exit(x, y)
             elif level[y][x] == 'L':
                 Tile('empty', x, y)
                 Wizard(1, 100, x, y)
@@ -103,7 +106,7 @@ def generate_level(level):
             elif level[y][x] == 'X':
                 Tile('empty', x, y)
                 Potion(x, y, 3)
-    return new_player, x, y
+    return new_player, x, y, door
 
 
 def terminate():
@@ -143,7 +146,7 @@ def start_screen():
 
 
 def game_screen(mode):
-    global player, camera, level_x, level_y
+    global player, camera, level_x, level_y, door
 
     if mode == 0:
         f = open('data/default_load.txt')
@@ -158,7 +161,7 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y = generate_level(load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
         save.close()
     elif mode == 1:
@@ -171,7 +174,7 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y = generate_level(load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
 
     pygame.mouse.set_visible(False)
@@ -185,7 +188,7 @@ def game_screen(mode):
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == 27:
+                if event.key == 27 or event.key == 112:
                     pause_screen()
                 elif event.key == 118:
                     if pygame.sprite.spritecollideany(player,
@@ -193,7 +196,7 @@ def game_screen(mode):
                         enemy = pygame.sprite.spritecollideany(player,
                                                                enemy_group)
                         enemy.hp -= player.damage
-                        for _ in range(3):
+                        for _ in range(7):
                             Particle((enemy.rect[0] + 50,
                                       enemy.rect[1] + 50),
                                      rint(-5, 6),
@@ -210,6 +213,8 @@ def game_screen(mode):
                     if player.damage_increasing:
                         player.damage_increasing -= 1
                         damage_up.append(DoubleDamage())
+                elif event.key == 109:
+                    show_minimap()
         if player.hp > 0:
             if pygame.key.get_pressed()[pygame.K_LEFT]:
                 turn = True
@@ -379,6 +384,23 @@ def rules_screen():
         pygame.display.flip()
 
 
+def show_minimap():
+    pygame.mouse.set_visible(True)
+    for button in buttons:
+        button.kill()
+    background = load_image('{}_map.jpg'.format(start_settings['level'][:-4]))
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == 109:
+                    return
+        screen.blit(background, (0, 0))
+        pygame.display.flip()
+
 def draw_hud_text():
     coins = pygame.font.Font(None, 75)
     coins = coins.render(str(player.coins),
@@ -425,7 +447,7 @@ def draw_hud_text():
 
 
 def restart_level():
-    global player, level_x, level_y, camera
+    global player, level_x, level_y, camera, door
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
     f = f.read().split('\n')
     if f[0] == '5level.txt':
@@ -438,7 +460,7 @@ def restart_level():
                                       int(f[4]),
                                       int(f[5]),
                                       int(f[6])]
-    player, level_x, level_y = generate_level(load_level(start_settings['level']))
+    player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
     camera = Camera((level_x, level_y))
 
 
@@ -480,9 +502,11 @@ class DoubleSpeed:
     def __init__(self):
         self.start_time = time.time()
         player.speed *= 2
+        self.updater = 0
 
     def update(self):
-        if time.time() - self.start_time > 8:
+        self.updater += 1
+        if self.updater > 500:
             player.speed //= 2
             return False
         return True
@@ -492,9 +516,11 @@ class DoubleDamage:
     def __init__(self):
         self.start_time = time.time()
         player.damage *= 2
+        self.updater = 0
 
     def update(self):
-        if time.time() - self.start_time > 8:
+        self.updater += 1
+        if self.updater > 300:
             player.damage //= 2
             return False
         return True
@@ -642,6 +668,7 @@ class Coin(pygame.sprite.Sprite):
         if pygame.sprite.collide_mask(self, player):
             player.coins += 1
             player.score += 10
+            door.current_score += 10
 
             self.kill()
         else:
@@ -704,9 +731,10 @@ class Exit(pygame.sprite.Sprite):
         self.image = load_image('door.png')
         self.rect = self.image.get_rect().move(tile_width * pos_x,
                                                tile_height * pos_y)
+        self.current_score = 0
 
     def update(self):
-        if pygame.sprite.spritecollideany(self, player_group):
+        if pygame.sprite.spritecollideany(self, player_group) and self.current_score >= 5000:
             f = open('data/save_load.txt', mode='w')
             data = ['{}level.txt'.format(str(int(start_settings['level'][0]) + 1)),
                     str(player.coins),
@@ -780,7 +808,7 @@ class HealMagic(pygame.sprite.Sprite):
     def update(self, *args):
         self.update_counter += 1
         if pygame.sprite.spritecollideany(self, player_group) and \
-                self.update_counter % 70 == 0:
+                self.update_counter % 35 == 0:
             player.hp += 1
             self.heal_counter += 1
             if self.heal_counter == 3:
@@ -845,6 +873,7 @@ class Wizard(pygame.sprite.Sprite):
         if self.hp <= 0:
             self.kill()
             player.score += self.score
+            door.current_score += self.score
         if abs(player.rect.x - self.rect.x) < 400 and \
                 abs(player.rect.y - self.rect.y) < 400 and \
                 self.update_counter % (self.frequency // 2) == 0:
@@ -1041,10 +1070,13 @@ class Player(pygame.sprite.Sprite):
         self.damage = 4
         self.damage_increasing = start_settings['player_stats'][5]
         Hud(WIDTH // 6 * 2, HEIGHT - 60, 'damage')
+        self.kill_counter = 0
         self.dead_start = True
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, action, left=False):
+        global door
+
         self.update_counter += 1
         if self.update_counter % 3 == 0:
             if action == 'move':
@@ -1065,7 +1097,7 @@ class Player(pygame.sprite.Sprite):
                     global player, level_x, level_y
                     start_settings['player_stats'][0] = 0
                     start_settings['player_stats'][1] = 20
-                    player, level_x, level_y = generate_level(load_level(start_settings['level']))
+                    player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
 
 
 class Camera:
