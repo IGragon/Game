@@ -77,7 +77,7 @@ def generate_level(level):
                 Tile('lava', x, y)
             elif level[y][x] == 'C':
                 Tile('empty', x, y)
-                if random.randint(0, 1) == 0:
+                if random.randint(0, 2) != 0:
                     Coin(x, y)
             elif level[y][x] == 'F':
                 Tile('empty', x, y)
@@ -205,14 +205,17 @@ def game_screen(mode):
                     if player.heal_potion:
                         player.heal_potion -= 1
                         player.hp += 10
+                        PotionEffect('heal')
                 elif event.key == 120:
                     if player.speed_potion:
                         player.speed_potion -= 1
                         speed_up.append(DoubleSpeed())
+                        PotionEffect('speed')
                 elif event.key == 99:
                     if player.damage_increasing:
                         player.damage_increasing -= 1
                         damage_up.append(DoubleDamage())
+                        PotionEffect('damage')
                 elif event.key == 109:
                     show_minimap()
         if player.hp > 0:
@@ -242,7 +245,7 @@ def game_screen(mode):
                     pygame.key.get_pressed()[pygame.K_UP] or
                     pygame.key.get_pressed()[pygame.K_RIGHT] or
                     pygame.key.get_pressed()[pygame.K_LEFT]):
-                player.update('stand')
+                player.update('stand', turn)
         else:
             player.update('dead')
 
@@ -401,6 +404,7 @@ def show_minimap():
         screen.blit(background, (0, 0))
         pygame.display.flip()
 
+
 def draw_hud_text():
     coins = pygame.font.Font(None, 75)
     coins = coins.render(str(player.coins),
@@ -446,6 +450,16 @@ def draw_hud_text():
                          damage.get_rect()[1]))
 
 
+def cut_sheet(self, sheet, columns, rows):
+    self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+    for j in range(rows):
+        for i in range(columns):
+            frame_location = (self.rect.w * i, self.rect.h * j)
+            self.frames.append(sheet.subsurface(pygame.Rect(
+                frame_location, self.rect.size)))
+
+
 def restart_level():
     global player, level_x, level_y, camera, door
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
@@ -475,6 +489,10 @@ potion_images = {1: load_image('heal_potion.png'),
 magic_images = {1: load_image('magic_ball1.png'),
                 2: load_image('magic_ball2.png'),
                 3: load_image('magic_ball3.png')}
+
+effect_settings = {'heal': [load_image('heal_effect.png'), 50],
+                   'speed': [load_image('speed_effect.png'), 500],
+                   'damage': [load_image('damage_effect.png'), 300]}
 
 hud_images = {'coin': load_image('coin_hud.png'),
               'hp': load_image('HPhud.png'),
@@ -646,7 +664,7 @@ class Coin(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
-        self.cut_sheet(load_image('coin.png'), 6, 1)
+        cut_sheet(self, load_image('coin.png'), 6, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect().move(tile_width * pos_x,
@@ -654,27 +672,16 @@ class Coin(pygame.sprite.Sprite):
         self.update_counter = 0
         self.mask = pygame.mask.from_surface(self.image)
 
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
-
     def update(self):
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player):
             player.coins += 1
             player.score += 10
             door.current_score += 10
-
             self.kill()
-        else:
-            if self.update_counter % 2 == 0:
-                self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-                self.image = self.frames[self.cur_frame]
+        if self.update_counter % 2 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
 
 
 class Potion(pygame.sprite.Sprite):
@@ -701,6 +708,30 @@ class Potion(pygame.sprite.Sprite):
                 self.kill()
 
 
+class PotionEffect(pygame.sprite.Sprite):
+    def __init__(self, eff_type):
+        super().__init__(particles)
+        self.frames = []
+        cut_sheet(self, effect_settings[eff_type][0], 8, 4)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(player.rect[0] + 50,
+                                               player.rect[1] + 60)
+        self.living_time = effect_settings[eff_type][1]
+        self.update_counter = 0
+
+    def update(self):
+        self.update_counter += 1
+        self.rect = self.image.get_rect().move(player.rect[0] + 0,
+                                               player.rect[1] + 40)
+        if self.update_counter % 4 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+        if self.update_counter >= self.living_time:
+            self.kill()
+
+
 class Magic(pygame.sprite.Sprite):
     def __init__(self, power, pos_x, pos_y, speed, vector, damage):
         super().__init__(magic_group, all_sprites)
@@ -717,6 +748,12 @@ class Magic(pygame.sprite.Sprite):
     def update(self):
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player):
+            for _ in range(self.damage * 2):
+                Particle((player.rect[0] + 50,
+                          player.rect[1] + 60),
+                         rint(-5, 6),
+                         rint(0, 6),
+                         dmg=True)
             player.hp -= self.damage
             if player.hp < 0:
                 player.hp = 0
@@ -732,6 +769,7 @@ class Exit(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x,
                                                tile_height * pos_y)
         self.current_score = 0
+        self.opened = False
 
     def update(self):
         if pygame.sprite.spritecollideany(self, player_group) and self.current_score >= 5000:
@@ -747,29 +785,25 @@ class Exit(pygame.sprite.Sprite):
             f.close()
             for sprite in all_sprites:
                 sprite.kill()
+            speed_up.clear()
+            damage_up.clear()
             restart_level()
+        if self.current_score >= 5000 and not self.opened:
+            self.image = load_image('door_opened.png')
+            self.opened = True
 
 
 class Fire(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
-        self.cut_sheet(load_image('fire_sheet.png'), 8, 4)
+        cut_sheet(self, load_image('fire_sheet.png'), 8, 4)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(tile_width * pos_x,
                                                tile_height * pos_y)
         self.update_counter = 0
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
 
     def update(self, *args):
         self.update_counter += 1
@@ -788,7 +822,7 @@ class HealMagic(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
-        self.cut_sheet(load_image('heal_magic.png'), 5, 5)
+        cut_sheet(self, load_image('heal_magic.png'), 5, 5)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect().move(tile_width * pos_x,
@@ -796,21 +830,13 @@ class HealMagic(pygame.sprite.Sprite):
         self.update_counter = 0
         self.heal_counter = 0
 
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
-
     def update(self, *args):
         self.update_counter += 1
         if pygame.sprite.spritecollideany(self, player_group) and \
                 self.update_counter % 35 == 0:
             player.hp += 1
             self.heal_counter += 1
+            PotionEffect('heal')
             if self.heal_counter == 3:
                 self.kill()
         else:
@@ -820,25 +846,34 @@ class HealMagic(pygame.sprite.Sprite):
 
 
 class Particle(pygame.sprite.Sprite):
-    fire = [load_image("spark.png")]
-    for scale in (5, 10, 15):
-        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
-
-    def __init__(self, pos, dx, dy):
+    def __init__(self, pos, dx, dy, dmg=False):
+        piece = [load_image("spark.png" if not dmg else "blood.png")]
+        for scale in (5, 10, 15):
+            piece.append(pygame.transform.scale(piece[0], (scale, scale)))
         super().__init__(particles, all_sprites)
-        self.image = random.choice(self.fire)
+        self.image = random.choice(piece)
         self.rect = self.image.get_rect()
         self.velocity = [dx, dy]
         self.rect.x, self.rect.y = pos
+        self.blood = dmg
         self.update_counter = 0
 
     def update(self):
         self.update_counter += 1
-        if self.update_counter % 3 == 0:
-            self.rect.x += self.velocity[0]
-            self.rect.y += self.velocity[1]
-        if self.update_counter >= 25:
-            self.kill()
+        if self.blood:
+            if self.update_counter % 3 == 0:
+                self.rect.x += self.velocity[0]
+                self.rect.y += self.velocity[1]
+            if self.update_counter >= 25:
+                self.velocity = 0, 0
+            if self.update_counter >= 50:
+                self.kill()
+        else:
+            if self.update_counter % 3 == 0:
+                self.rect.x += self.velocity[0]
+                self.rect.y += self.velocity[1]
+            if self.update_counter >= 25:
+                self.kill()
 
 
 class Hud(pygame.sprite.Sprite):
@@ -1072,6 +1107,7 @@ class Player(pygame.sprite.Sprite):
         Hud(WIDTH // 6 * 2, HEIGHT - 60, 'damage')
         self.kill_counter = 0
         self.dead_start = True
+        self.hit_animation = False
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, action, left=False):
@@ -1085,7 +1121,8 @@ class Player(pygame.sprite.Sprite):
                     self.frames_walk[self.cur_frame], True, False)
             if action == 'stand':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_stand)
-                self.image = self.frames_stand[self.cur_frame]
+                self.image = self.frames_stand[self.cur_frame] if not left else pygame.transform.flip(
+                    self.frames_stand[self.cur_frame], True, False)
             if action == 'dead':
                 if self.dead_start:
                     self.cur_frame = 0
@@ -1094,6 +1131,8 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.frames_dead[self.cur_frame]
                 if self.cur_frame == 9:
                     self.kill()
+                    speed_up.clear()
+                    damage_up.clear()
                     global player, level_x, level_y
                     start_settings['player_stats'][0] = 0
                     start_settings['player_stats'][1] = 20
