@@ -191,6 +191,7 @@ def game_screen(mode):
                 if event.key == 27 or event.key == 112:
                     pause_screen()
                 elif event.key == 118:
+                    player.action = 'hit'
                     if pygame.sprite.spritecollideany(player,
                                                       enemy_group):
                         enemy = pygame.sprite.spritecollideany(player,
@@ -219,35 +220,38 @@ def game_screen(mode):
                 elif event.key == 109:
                     show_minimap()
         if player.hp > 0:
+            player.action = 'move' if player.action != 'hit' else player.action
             if pygame.key.get_pressed()[pygame.K_LEFT]:
-                turn = True
+                player.turn = True
                 player.rect.x -= player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
                     player.rect.x += player.speed / FPS
-                player.update('move', turn)
+                player.update()
             if pygame.key.get_pressed()[pygame.K_RIGHT]:
-                turn = False
+                player.turn = False
                 player.rect.x += player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
                     player.rect.x -= player.speed / FPS
-                player.update('move', turn)
+                player.update()
             if pygame.key.get_pressed()[pygame.K_UP]:
                 player.rect.y -= player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
                     player.rect.y += player.speed / FPS
-                player.update('move', turn)
+                player.update()
             if pygame.key.get_pressed()[pygame.K_DOWN]:
                 player.rect.y += player.speed / FPS
                 if pygame.sprite.spritecollideany(player, wall_group):
                     player.rect.y -= player.speed / FPS
-                player.update('move', turn)
+                player.update()
             if not (pygame.key.get_pressed()[pygame.K_DOWN] or
                     pygame.key.get_pressed()[pygame.K_UP] or
                     pygame.key.get_pressed()[pygame.K_RIGHT] or
                     pygame.key.get_pressed()[pygame.K_LEFT]):
-                player.update('stand', turn)
+                player.action = 'stand' if player.action != 'hit' else player.action
+                player.update()
         else:
-            player.update('dead')
+            player.action = 'dead'
+            player.update()
 
         camera.update(player)
 
@@ -495,7 +499,7 @@ effect_settings = {'heal': [load_image('heal_effect.png'), 50],
                    'damage': [load_image('damage_effect.png'), 300]}
 
 hud_images = {'coin': load_image('coin_hud.png'),
-              'hp': load_image('HPhud.png'),
+              'hp': load_image('HPHud.png'),
               'hp_potion': load_image('heal_potion_hud.png'),
               'speed': load_image('speed_hud.png'),
               'damage': load_image('damage_hud.png')}
@@ -1088,6 +1092,16 @@ class Player(pygame.sprite.Sprite):
                             load_image('HeroDead8.png'),
                             load_image('HeroDead9.png'),
                             load_image('HeroDead10.png')]
+        self.frames_hit = [load_image('HeroHit1.png'),
+                           load_image('HeroHit2.png'),
+                           load_image('HeroHit3.png'),
+                           load_image('HeroHit4.png'),
+                           load_image('HeroHit5.png'),
+                           load_image('HeroHit6.png'),
+                           load_image('HeroHit7.png'),
+                           load_image('HeroHit8.png'),
+                           load_image('HeroHit9.png'),
+                           load_image('HeroHit10.png')]
         self.cur_frame = 0
         self.image = self.frames_stand[self.cur_frame]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
@@ -1106,29 +1120,32 @@ class Player(pygame.sprite.Sprite):
         self.damage_increasing = start_settings['player_stats'][5]
         Hud(WIDTH // 6 * 2, HEIGHT - 60, 'damage')
         self.kill_counter = 0
+        self.action = 'stand'
         self.dead_start = True
+        self.turn = False
         self.hit_animation = False
         self.mask = pygame.mask.from_surface(self.image)
 
-    def update(self, action, left=False):
+    def update(self):
         global door
 
         self.update_counter += 1
         if self.update_counter % 3 == 0:
-            if action == 'move':
+            if self.action == 'move':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_walk)
-                self.image = self.frames_walk[self.cur_frame] if not left else pygame.transform.flip(
+                self.image = self.frames_walk[self.cur_frame] if not self.turn else pygame.transform.flip(
                     self.frames_walk[self.cur_frame], True, False)
-            if action == 'stand':
+            elif self.action == 'stand':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_stand)
-                self.image = self.frames_stand[self.cur_frame] if not left else pygame.transform.flip(
+                self.image = self.frames_stand[self.cur_frame] if not self.turn else pygame.transform.flip(
                     self.frames_stand[self.cur_frame], True, False)
-            if action == 'dead':
+            elif self.action == 'dead':
                 if self.dead_start:
                     self.cur_frame = 0
                     self.dead_start = not self.dead_start
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_dead)
-                self.image = self.frames_dead[self.cur_frame]
+                self.image = self.frames_dead[self.cur_frame] if not self.turn else pygame.transform.flip(
+                    self.frames_dead[self.cur_frame], True, False)
                 if self.cur_frame == 9:
                     self.kill()
                     speed_up.clear()
@@ -1137,6 +1154,16 @@ class Player(pygame.sprite.Sprite):
                     start_settings['player_stats'][0] = 0
                     start_settings['player_stats'][1] = 20
                     player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
+            elif self.action == 'hit':
+                if not self.hit_animation:
+                    self.cur_frame = 0
+                    self.hit_animation = not self.hit_animation
+                self.cur_frame = (self.cur_frame + 1) % len(self.frames_hit)
+                self.image = self.frames_hit[self.cur_frame] if not self.turn else pygame.transform.flip(
+                    self.frames_hit[self.cur_frame], True, False)
+                if self.cur_frame == 9:
+                    self.action = 'stand'
+                    self.hit_animation = not self.hit_animation
 
 
 class Camera:
