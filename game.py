@@ -10,6 +10,7 @@ pygame.key.set_repeat(200, 70)
 pygame.mixer.music.load('data/music.mp3')
 pygame.mixer.music.play(-1)
 
+# константы
 FPS = 50
 WIDTH = 1000
 HEIGHT = 700
@@ -19,6 +20,8 @@ clock = pygame.time.Clock()
 
 player = None
 door = None
+
+# создание всех групп спрайтов
 start_settings = {'level': '',
                   'player_stats': []}
 all_sprites = pygame.sprite.Group()
@@ -37,6 +40,7 @@ damage_up = []
 
 
 def load_image(name, color_key=None):
+    # загрузка изображения(спрайтов)
     fullname = os.path.join('data', name)
     try:
         image = pygame.image.load(fullname)
@@ -53,6 +57,7 @@ def load_image(name, color_key=None):
 
 
 def load_level(filename):
+    # загрузка уровня из файла
     filename = "data/" + filename
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
@@ -61,6 +66,7 @@ def load_level(filename):
 
 
 def generate_level(level):
+    # генерация уровня по схеме
     new_player, x, y = None, None, None
     for sprite in all_sprites:
         sprite.kill()
@@ -115,6 +121,7 @@ def terminate():
 
 
 def start_screen():
+    # меню игры
     speed_up.clear()
     pygame.mouse.set_visible(True)
     for button in buttons:
@@ -146,6 +153,8 @@ def start_screen():
 
 
 def game_screen(mode):
+    # основой экран игры, где происходит всё действие
+
     global player, camera, level_x, level_y, door
 
     if mode == 0:
@@ -180,7 +189,6 @@ def game_screen(mode):
     pygame.mouse.set_visible(False)
 
     running = True
-    turn = False
 
     while running:
 
@@ -189,19 +197,20 @@ def game_screen(mode):
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == 27 or event.key == 112:
+                    # пауза
                     pause_screen()
                 elif event.key == 118:
+                    # проверка на удар
                     player.action = 'hit'
-                    if pygame.sprite.spritecollideany(player,
-                                                      enemy_group):
-                        enemy = pygame.sprite.spritecollideany(player,
-                                                               enemy_group)
-                        enemy.hp -= player.damage
-                        for _ in range(7):
-                            Particle((enemy.rect[0] + 50,
-                                      enemy.rect[1] + 50),
-                                     rint(-5, 6),
-                                     rint(-5, 6))
+                    for enemy in enemy_group:
+                        if pygame.sprite.collide_mask(enemy, player):
+                            enemy.hp -= player.damage
+                            for _ in range(7):
+                                Particle((enemy.rect[0] + 50,
+                                          enemy.rect[1] + 50),
+                                         rint(-5, 6),
+                                         rint(-5, 6))
+                # использование зелий 1.Восстановление жизней 2.Увеличение скорости 3.Увеличение урона
                 elif event.key == 122:
                     if player.heal_potion:
                         player.heal_potion -= 1
@@ -215,10 +224,11 @@ def game_screen(mode):
                 elif event.key == 99:
                     if player.damage_increasing:
                         player.damage_increasing -= 1
-                        damage_up.append(DoubleDamage())
+                        damage_up.append(IncreaseDamage())
                         PotionEffect('damage')
                 elif event.key == 109:
                     show_minimap()
+        # описание движений персонажа и поворотов его спрайта
         if player.hp > 0:
             player.action = 'move' if player.action != 'hit' else player.action
             if pygame.key.get_pressed()[pygame.K_LEFT]:
@@ -250,10 +260,13 @@ def game_screen(mode):
                 player.action = 'stand' if player.action != 'hit' else player.action
                 player.update()
         else:
+            # смерть
             player.action = 'dead'
             player.update()
 
         camera.update(player)
+
+        # обновление всех групп спрайтов
 
         for sprite in passive_group:
             sprite.update()
@@ -276,7 +289,8 @@ def game_screen(mode):
             if not speed.update():
                 speed_up.remove(speed)
 
-        screen.fill(pygame.Color(0, 0, 0))
+        # "рисование" всех спрайтов и картинок
+
         wall_group.draw(screen)
         tiles_group.draw(screen)
         passive_group.draw(screen)
@@ -294,6 +308,7 @@ def game_screen(mode):
 
 
 def pause_screen():
+    # окно паузы
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
@@ -307,6 +322,9 @@ def pause_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == 27 or event.key == 112:
+                    return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -322,6 +340,7 @@ def pause_screen():
 
 
 def congratulation_screen():
+    # конечное окно, поздравляющее игрока с прохождением игры
     f = open('data/save_load.txt', encoding='UTF8', mode='w')
     default = open('data/default_load.txt', encoding='UTF8', mode='r')
     default_s = default.read()
@@ -340,6 +359,9 @@ def congratulation_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == 27:
+                    return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -365,6 +387,7 @@ def congratulation_screen():
 
 
 def rules_screen():
+    # окно с правилами и условиями игры
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
@@ -377,6 +400,9 @@ def rules_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == 27:
+                    return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -392,6 +418,7 @@ def rules_screen():
 
 
 def show_minimap():
+    # показ миникарты уровня
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
@@ -403,13 +430,14 @@ def show_minimap():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN:
-                if event.key == 109:
+                if event.key == 109 or event.key == 27:
                     return
         screen.blit(background, (0, 0))
         pygame.display.flip()
 
 
 def draw_hud_text():
+    # текст игрового интерфейса
     coins = pygame.font.Font(None, 75)
     coins = coins.render(str(player.coins),
                          1,
@@ -452,9 +480,19 @@ def draw_hud_text():
                          HEIGHT - 60,
                          damage.get_rect()[0],
                          damage.get_rect()[1]))
+    level_info = pygame.font.Font(None, 40)
+    level_info = level_info.render('СЧЁТ: {} УРОВЕНЬ {}'.format(door.current_score,
+                                                                start_settings['level'][0]),
+                                   1,
+                                   pygame.Color('white'))
+    screen.blit(level_info, (WIDTH - level_info.get_rect()[2] - 10,
+                             HEIGHT - level_info.get_rect()[3] - 10,
+                             level_info.get_rect()[0],
+                             level_info.get_rect()[1]))
 
 
 def cut_sheet(self, sheet, columns, rows):
+    # функция разрезания спрайт шитов вынесена во внешнее поле
     self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
     for j in range(rows):
@@ -465,6 +503,7 @@ def cut_sheet(self, sheet, columns, rows):
 
 
 def restart_level():
+    # перезагрузка уровня на новый или тот же
     global player, level_x, level_y, camera, door
     f = open('data/save_load.txt', encoding='UTF8', mode='r')
     f = f.read().split('\n')
@@ -521,6 +560,8 @@ tile_width = tile_height = 100
 
 
 class DoubleSpeed:
+    # увеличение скорости
+
     def __init__(self):
         self.start_time = time.time()
         player.speed *= 2
@@ -534,21 +575,25 @@ class DoubleSpeed:
         return True
 
 
-class DoubleDamage:
+class IncreaseDamage:
+    # увеличение урона
+
     def __init__(self):
         self.start_time = time.time()
-        player.damage *= 2
+        player.damage += 2
         self.updater = 0
 
     def update(self):
         self.updater += 1
         if self.updater > 300:
-            player.damage //= 2
+            player.damage -= 2
             return False
         return True
 
 
 class Back(pygame.sprite.Sprite):
+    # кнопка назад
+
     image = load_image('exit.png')
     active = load_image('exit_active.png')
 
@@ -576,6 +621,8 @@ class Back(pygame.sprite.Sprite):
 
 
 class NewGame(pygame.sprite.Sprite):
+    # кнопка новой игры
+
     image = load_image('new_game.png')
     active = load_image('new_game_active.png')
 
@@ -599,6 +646,8 @@ class NewGame(pygame.sprite.Sprite):
 
 
 class Rules(pygame.sprite.Sprite):
+    # кнопка продолжить
+
     image = load_image('rules.png')
     active = load_image('rules_active.png')
 
@@ -622,6 +671,8 @@ class Rules(pygame.sprite.Sprite):
 
 
 class Continue(pygame.sprite.Sprite):
+    # кнопка продолжить
+
     image = load_image('save.png')
     active = load_image('save_active.png')
 
@@ -649,6 +700,8 @@ class Continue(pygame.sprite.Sprite):
 
 
 class Tile(pygame.sprite.Sprite):
+    # пол
+
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
         self.image = tile_images[tile_type]
@@ -657,6 +710,8 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Wall(pygame.sprite.Sprite):
+    # стены
+
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(wall_group, all_sprites)
         self.image = tile_images[tile_type]
@@ -665,6 +720,8 @@ class Wall(pygame.sprite.Sprite):
 
 
 class Coin(pygame.sprite.Sprite):
+    # монетка
+
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
@@ -689,6 +746,8 @@ class Coin(pygame.sprite.Sprite):
 
 
 class Potion(pygame.sprite.Sprite):
+    # зелье здоровья, скорости или урона
+
     def __init__(self, pos_x, pos_y, code):
         super().__init__(passive_group, all_sprites)
         self.code = code
@@ -713,6 +772,8 @@ class Potion(pygame.sprite.Sprite):
 
 
 class PotionEffect(pygame.sprite.Sprite):
+    # эффекты при и использовании зелей и лечения
+
     def __init__(self, eff_type):
         super().__init__(particles)
         self.frames = []
@@ -737,6 +798,8 @@ class PotionEffect(pygame.sprite.Sprite):
 
 
 class Magic(pygame.sprite.Sprite):
+    # МАААААГИЯЯЯ плохая
+
     def __init__(self, power, pos_x, pos_y, speed, vector, damage):
         super().__init__(magic_group, all_sprites)
         self.image = magic_images[power]
@@ -767,6 +830,8 @@ class Magic(pygame.sprite.Sprite):
 
 
 class Exit(pygame.sprite.Sprite):
+    # дверь с собственным счётчиком очков
+
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.image = load_image('door.png')
@@ -798,6 +863,8 @@ class Exit(pygame.sprite.Sprite):
 
 
 class Fire(pygame.sprite.Sprite):
+    # огонь
+
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
@@ -823,6 +890,8 @@ class Fire(pygame.sprite.Sprite):
 
 
 class HealMagic(pygame.sprite.Sprite):
+    # МАААГИЯЯЯ лечебная
+
     def __init__(self, pos_x, pos_y):
         super().__init__(passive_group, all_sprites)
         self.frames = []
@@ -850,6 +919,8 @@ class HealMagic(pygame.sprite.Sprite):
 
 
 class Particle(pygame.sprite.Sprite):
+    # частички
+
     def __init__(self, pos, dx, dy, dmg=False):
         piece = [load_image("spark.png" if not dmg else "blood.png")]
         for scale in (5, 10, 15):
@@ -881,6 +952,8 @@ class Particle(pygame.sprite.Sprite):
 
 
 class Hud(pygame.sprite.Sprite):
+    # элементы игрового интерфейса
+
     def __init__(self, pos_x, pos_y, image):
         super().__init__(hud_sprites)
         self.image = hud_images[image]
@@ -889,6 +962,8 @@ class Hud(pygame.sprite.Sprite):
 
 
 class Wizard(pygame.sprite.Sprite):
+    # плохие маги
+
     def __init__(self, power, frequency, pos_x, pos_y):
         super().__init__(enemy_group, all_sprites)
         self.frames = wizard_frames[power]
@@ -1060,9 +1135,11 @@ class Wizard(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
+    # игрок
+
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.frames_walk = [load_image('HeroWalk1.png'),
+        self.frames_walk = [load_image('HeroWalk1.png'),    # куча изображений, тк отдельным шитом нет
                             load_image('HeroWalk2.png'),
                             load_image('HeroWalk3.png'),
                             load_image('HeroWalk4.png'),
@@ -1094,13 +1171,8 @@ class Player(pygame.sprite.Sprite):
                             load_image('HeroDead10.png')]
         self.frames_hit = [load_image('HeroHit1.png'),
                            load_image('HeroHit2.png'),
-                           load_image('HeroHit3.png'),
-                           load_image('HeroHit4.png'),
                            load_image('HeroHit5.png'),
                            load_image('HeroHit6.png'),
-                           load_image('HeroHit7.png'),
-                           load_image('HeroHit8.png'),
-                           load_image('HeroHit9.png'),
                            load_image('HeroHit10.png')]
         self.cur_frame = 0
         self.image = self.frames_stand[self.cur_frame]
@@ -1161,12 +1233,13 @@ class Player(pygame.sprite.Sprite):
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_hit)
                 self.image = self.frames_hit[self.cur_frame] if not self.turn else pygame.transform.flip(
                     self.frames_hit[self.cur_frame], True, False)
-                if self.cur_frame == 9:
+                if self.cur_frame == 4:
                     self.action = 'stand'
                     self.hit_animation = not self.hit_animation
 
 
 class Camera:
+    # камера для перемещения по карте
     def __init__(self, field_size):
         self.dx = 0
         self.dy = 0
