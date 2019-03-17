@@ -3,7 +3,6 @@ import sys
 import pygame
 import random
 import time
-from random import randint as rint
 
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -170,7 +169,8 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level \
+            (load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
         save.close()
     elif mode == 1:
@@ -183,7 +183,8 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level \
+            (load_level(start_settings['level']))
         camera = Camera((level_x, level_y))
 
     pygame.mouse.set_visible(False)
@@ -203,13 +204,14 @@ def game_screen(mode):
                     # проверка на удар
                     player.action = 'hit'
                     for enemy in enemy_group:
-                        if pygame.sprite.collide_mask(enemy, player):
+                        if pygame.sprite.collide_mask(enemy,
+                                                      player):
                             enemy.hp -= player.damage
                             for _ in range(7):
                                 Particle((enemy.rect[0] + 50,
                                           enemy.rect[1] + 50),
-                                         rint(-5, 6),
-                                         rint(-5, 6))
+                                         random.randint(-5, 6),
+                                         random.randint(-5, 6))
                 # использование зелий 1.Восстановление жизней 2.Увеличение скорости 3.Увеличение урона
                 elif event.key == 122:
                     if player.heal_potion:
@@ -230,34 +232,40 @@ def game_screen(mode):
                     show_minimap()
         # описание движений персонажа и поворотов его спрайта
         if player.hp > 0:
-            player.action = 'move' if player.action != 'hit' else player.action
+            player.action = 'move' if player.action != \
+                                      'hit' else player.action
             if pygame.key.get_pressed()[pygame.K_LEFT]:
                 player.turn = True
                 player.rect.x -= player.speed / FPS
-                if pygame.sprite.spritecollideany(player, wall_group):
+                if pygame.sprite.spritecollideany(player,
+                                                  wall_group):
                     player.rect.x += player.speed / FPS
                 player.update()
             if pygame.key.get_pressed()[pygame.K_RIGHT]:
                 player.turn = False
                 player.rect.x += player.speed / FPS
-                if pygame.sprite.spritecollideany(player, wall_group):
+                if pygame.sprite.spritecollideany(player,
+                                                  wall_group):
                     player.rect.x -= player.speed / FPS
                 player.update()
             if pygame.key.get_pressed()[pygame.K_UP]:
                 player.rect.y -= player.speed / FPS
-                if pygame.sprite.spritecollideany(player, wall_group):
+                if pygame.sprite.spritecollideany(player,
+                                                  wall_group):
                     player.rect.y += player.speed / FPS
                 player.update()
             if pygame.key.get_pressed()[pygame.K_DOWN]:
                 player.rect.y += player.speed / FPS
-                if pygame.sprite.spritecollideany(player, wall_group):
+                if pygame.sprite.spritecollideany(player,
+                                                  wall_group):
                     player.rect.y -= player.speed / FPS
                 player.update()
             if not (pygame.key.get_pressed()[pygame.K_DOWN] or
                     pygame.key.get_pressed()[pygame.K_UP] or
                     pygame.key.get_pressed()[pygame.K_RIGHT] or
                     pygame.key.get_pressed()[pygame.K_LEFT]):
-                player.action = 'stand' if player.action != 'hit' else player.action
+                player.action = 'stand' if player.action != \
+                                           'hit' else player.action
                 player.update()
         else:
             # смерть
@@ -341,8 +349,12 @@ def pause_screen():
 
 def congratulation_screen():
     # конечное окно, поздравляющее игрока с прохождением игры
-    f = open('data/save_load.txt', encoding='UTF8', mode='w')
-    default = open('data/default_load.txt', encoding='UTF8', mode='r')
+    f = open('data/save_load.txt',
+             encoding='UTF8',
+             mode='w')
+    default = open('data/default_load.txt',
+                   encoding='UTF8',
+                   mode='r')
     default_s = default.read()
     f.write(default_s)
     f.close()
@@ -374,7 +386,9 @@ def congratulation_screen():
         screen.blit(background, (0, 0))
 
         score = pygame.font.Font(None, 60)
-        score = score.render('ОЧКИ: {}'.format(player.score + 100 * player.coins + 200 * player.hp),
+        score = score.render('ОЧКИ: {}'.format(player.score +
+                                               100 * player.coins +
+                                               200 * player.hp),
                              1,
                              pygame.Color('red'))
         screen.blit(score, (WIDTH // 2 - (score.get_rect()[2] // 2),
@@ -422,7 +436,8 @@ def show_minimap():
     pygame.mouse.set_visible(True)
     for button in buttons:
         button.kill()
-    background = load_image('{}_map.jpg'.format(start_settings['level'][:-4]))
+    background = load_image('{}_map.jpg'.format
+                            (start_settings['level'][:-4]))
 
     running = True
     while running:
@@ -481,10 +496,11 @@ def draw_hud_text():
                          damage.get_rect()[0],
                          damage.get_rect()[1]))
     level_info = pygame.font.Font(None, 40)
-    level_info = level_info.render('СЧЁТ: {} УРОВЕНЬ {}'.format(door.current_score,
-                                                                start_settings['level'][0]),
-                                   1,
-                                   pygame.Color('white'))
+    level_info = level_info.render \
+        ('СЧЁТ: {} УРОВЕНЬ {}'.format(door.current_score,
+                                      start_settings['level'][0]),
+         1,
+         pygame.Color('white'))
     screen.blit(level_info, (WIDTH - level_info.get_rect()[2] - 10,
                              HEIGHT - level_info.get_rect()[3] - 10,
                              level_info.get_rect()[0],
@@ -517,7 +533,8 @@ def restart_level():
                                       int(f[4]),
                                       int(f[5]),
                                       int(f[6])]
-    player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
+    player, level_x, level_y, door = generate_level\
+        (load_level(start_settings['level']))
     camera = Camera((level_x, level_y))
 
 
@@ -818,8 +835,8 @@ class Magic(pygame.sprite.Sprite):
             for _ in range(self.damage * 2):
                 Particle((player.rect[0] + 50,
                           player.rect[1] + 60),
-                         rint(-5, 6),
-                         rint(0, 6),
+                         random.randint(-5, 6),
+                         random.randint(0, 6),
                          dmg=True)
             player.hp -= self.damage
             if player.hp < 0:
@@ -1139,7 +1156,7 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.frames_walk = [load_image('HeroWalk1.png'),    # куча изображений, тк отдельным шитом нет
+        self.frames_walk = [load_image('HeroWalk1.png'),  # куча изображений, тк отдельным шитом нет
                             load_image('HeroWalk2.png'),
                             load_image('HeroWalk3.png'),
                             load_image('HeroWalk4.png'),
