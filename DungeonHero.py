@@ -92,7 +92,7 @@ def generate_level(level):
                 HealMagic(x, y)
             elif level[y][x] == 'E':
                 Tile('empty', x, y)
-                door = Exit(x, y)
+                door_created = Exit(x, y)
             elif level[y][x] == 'L':
                 Tile('empty', x, y)
                 Wizard(1, 100, x, y)
@@ -111,7 +111,7 @@ def generate_level(level):
             elif level[y][x] == 'X':
                 Tile('empty', x, y)
                 Potion(x, y, 3)
-    return new_player, x, y, door
+    return new_player, x, y, door_created
 
 
 def terminate():
@@ -136,6 +136,7 @@ def start_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            # проверка нажатия на кнопки
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -155,7 +156,7 @@ def game_screen(mode):
     # основой экран игры, где происходит всё действие
 
     global player, camera, level_x, level_y, door
-
+    # загрузка новой игры
     if mode == 0:
         f = open('data/default_load.txt')
         save = open('data/save_load.txt', mode='w')
@@ -169,10 +170,12 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y, door = generate_level \
-            (load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level(load_level
+                                                        (start_settings
+                                                         ['level']))
         camera = Camera((level_x, level_y))
         save.close()
+    # загрузка сохранения
     elif mode == 1:
         f = open('data/save_load.txt')
         f = list(map(lambda x: x.strip(), f.readlines()))
@@ -183,8 +186,9 @@ def game_screen(mode):
                                           int(f[4]),
                                           int(f[5]),
                                           int(f[6])]
-        player, level_x, level_y, door = generate_level \
-            (load_level(start_settings['level']))
+        player, level_x, level_y, door = generate_level(load_level
+                                                        (start_settings
+                                                         ['level']))
         camera = Camera((level_x, level_y))
 
     pygame.mouse.set_visible(False)
@@ -212,22 +216,26 @@ def game_screen(mode):
                                           enemy.rect[1] + 50),
                                          random.randint(-5, 6),
                                          random.randint(-5, 6))
-                # использование зелий 1.Восстановление жизней 2.Увеличение скорости 3.Увеличение урона
+                # использование зелий
+                # 1.Восстановление жизней
                 elif event.key == 122:
                     if player.heal_potion:
                         player.heal_potion -= 1
                         player.hp += 10
                         PotionEffect('heal')
+                # 2.Увеличение скорости
                 elif event.key == 120:
                     if player.speed_potion:
                         player.speed_potion -= 1
                         speed_up.append(DoubleSpeed())
                         PotionEffect('speed')
+                # 3.Увеличение урона
                 elif event.key == 99:
                     if player.damage_increasing:
                         player.damage_increasing -= 1
                         damage_up.append(IncreaseDamage())
                         PotionEffect('damage')
+                # показ миникарты
                 elif event.key == 109:
                     show_minimap()
         # описание движений персонажа и поворотов его спрайта
@@ -330,9 +338,11 @@ def pause_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            # выход по esc или по "Р"
             elif event.type == pygame.KEYDOWN:
                 if event.key == 27 or event.key == 112:
                     return
+            # проверка на нажитие по кнопкам
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -371,9 +381,11 @@ def congratulation_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            # выход по назатию esc
             elif event.type == pygame.KEYDOWN:
                 if event.key == 27:
                     return
+            # проверка нажатия на кнопку
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -385,6 +397,7 @@ def congratulation_screen():
 
         screen.blit(background, (0, 0))
 
+        # отрисовка очков игрока
         score = pygame.font.Font(None, 60)
         score = score.render('ОЧКИ: {}'.format(player.score +
                                                100 * player.coins +
@@ -414,9 +427,11 @@ def rules_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            # выход по назатию esc
             elif event.type == pygame.KEYDOWN:
                 if event.key == 27:
                     return
+            # проверка нажатия на кнопку
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for button in buttons:
                     if button.rect.collidepoint(event.pos):
@@ -444,6 +459,7 @@ def show_minimap():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            # выход по назатию esc или "М"
             elif event.type == pygame.KEYDOWN:
                 if event.key == 109 or event.key == 27:
                     return
@@ -453,16 +469,19 @@ def show_minimap():
 
 def draw_hud_text():
     # текст игрового интерфейса
+    # монетки
     coins = pygame.font.Font(None, 75)
     coins = coins.render(str(player.coins),
                          1,
                          pygame.Color('gold'))
     screen.blit(coins, (WIDTH - 60, 15, 100, 100))
+    # здоровье
     hp = pygame.font.Font(None, 75)
     hp = hp.render(str(player.hp),
                    1,
                    pygame.Color('red'))
     screen.blit(hp, (65, 10, 100, 100))
+    # очки
     score = pygame.font.Font(None, 75)
     score = score.render(str(player.score),
                          1,
@@ -471,6 +490,7 @@ def draw_hud_text():
                         10,
                         score.get_rect()[0],
                         score.get_rect()[1]))
+    # кол-во зелей здоровья
     hp_potion = pygame.font.Font(None, 75)
     hp_potion = hp_potion.render(str(player.heal_potion),
                                  1,
@@ -479,6 +499,7 @@ def draw_hud_text():
                             HEIGHT - 60,
                             hp_potion.get_rect()[0],
                             hp_potion.get_rect()[1]))
+    # кол-во зелей скорости
     speed = pygame.font.Font(None, 75)
     speed = speed.render(str(player.speed_potion),
                          1,
@@ -487,6 +508,7 @@ def draw_hud_text():
                         HEIGHT - 60,
                         speed.get_rect()[0],
                         speed.get_rect()[1]))
+    # кол-во зелей урона
     damage = pygame.font.Font(None, 75)
     damage = damage.render(str(player.damage_increasing),
                            1,
@@ -495,12 +517,13 @@ def draw_hud_text():
                          HEIGHT - 60,
                          damage.get_rect()[0],
                          damage.get_rect()[1]))
+    # информация об уровне(кол-во очков и номер уровня)
     level_info = pygame.font.Font(None, 40)
-    level_info = level_info.render \
-        ('СЧЁТ: {} УРОВЕНЬ {}'.format(door.current_score,
-                                      start_settings['level'][0]),
-         1,
-         pygame.Color('white'))
+    level_info = level_info.render('СЧЁТ: {} УРОВЕНЬ {}'.format
+                                   (door.current_score,
+                                    start_settings['level'][0]),
+                                   1,
+                                   pygame.Color('white'))
     screen.blit(level_info, (WIDTH - level_info.get_rect()[2] - 10,
                              HEIGHT - level_info.get_rect()[3] - 10,
                              level_info.get_rect()[0],
@@ -533,33 +556,34 @@ def restart_level():
                                       int(f[4]),
                                       int(f[5]),
                                       int(f[6])]
-    player, level_x, level_y, door = generate_level\
-        (load_level(start_settings['level']))
+    player, level_x, level_y, door = generate_level(load_level
+                                                    (start_settings['level']))
     camera = Camera((level_x, level_y))
 
 
+# изображения пола
 tile_images = {'wall': load_image('wall.jpg'),
                'empty': load_image('floor.jpg'),
                'lava': load_image('lava.png')}
-
+# изображения зелей
 potion_images = {1: load_image('heal_potion.png'),
                  2: load_image('speed_potion.png'),
                  3: load_image('fist.png')}
-
+# изображения МАААГИИ
 magic_images = {1: load_image('magic_ball1.png'),
                 2: load_image('magic_ball2.png'),
                 3: load_image('magic_ball3.png')}
-
+# изображения эффектов частиц
 effect_settings = {'heal': [load_image('heal_effect.png'), 50],
                    'speed': [load_image('speed_effect.png'), 500],
                    'damage': [load_image('damage_effect.png'), 300]}
-
+# изображения игрового интерфейса
 hud_images = {'coin': load_image('coin_hud.png'),
               'hp': load_image('HPHud.png'),
               'hp_potion': load_image('heal_potion_hud.png'),
               'speed': load_image('speed_hud.png'),
               'damage': load_image('damage_hud.png')}
-
+# изображения магов
 wizard_frames = {1: [load_image('WizardEasy1.png'),
                      load_image('WizardEasy2.png'),
                      load_image('WizardEasy3.png'),
@@ -572,7 +596,7 @@ wizard_frames = {1: [load_image('WizardEasy1.png'),
                      load_image('WizardBoss2.png'),
                      load_image('WizardBoss3.png'),
                      load_image('WizardBoss4.png')]}
-
+# размер "плитки"
 tile_width = tile_height = 100
 
 
@@ -585,6 +609,7 @@ class DoubleSpeed:
         self.updater = 0
 
     def update(self):
+        # таймер на выключение бафа
         self.updater += 1
         if self.updater > 500:
             player.speed //= 2
@@ -601,6 +626,7 @@ class IncreaseDamage:
         self.updater = 0
 
     def update(self):
+        # таймер на выключение бафа
         self.updater += 1
         if self.updater > 300:
             player.damage -= 2
@@ -622,6 +648,7 @@ class Back(pygame.sprite.Sprite):
         self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
 
     def update(self):
+        # загорается красным при наведении мышки
         xm, ym = pygame.mouse.get_pos()
         x, y = self.rect[0], self.rect[1]
         delta_x, delta_y = self.rect[2], self.rect[3]
@@ -631,8 +658,10 @@ class Back(pygame.sprite.Sprite):
             self.image = Back.image
 
     def action(self):
+        # выходит из игры
         if self.code == 0:
             terminate()
+        # или запускает начальный экран
         elif self.code == 1:
             start_screen()
 
@@ -650,6 +679,7 @@ class NewGame(pygame.sprite.Sprite):
         self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
 
     def update(self):
+        # загорается красным при наведении мышки
         xm, ym = pygame.mouse.get_pos()
         x, y = self.rect[0], self.rect[1]
         delta_x, delta_y = self.rect[2], self.rect[3]
@@ -659,11 +689,12 @@ class NewGame(pygame.sprite.Sprite):
             self.image = NewGame.image
 
     def action(self):
+        # запускает игру с начальными настройками
         game_screen(0)
 
 
 class Rules(pygame.sprite.Sprite):
-    # кнопка продолжить
+    # кнопка правил
 
     image = load_image('rules.png')
     active = load_image('rules_active.png')
@@ -675,6 +706,7 @@ class Rules(pygame.sprite.Sprite):
         self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
 
     def update(self):
+        # загорается красным при наведении мышки
         xm, ym = pygame.mouse.get_pos()
         x, y = self.rect[0], self.rect[1]
         delta_x, delta_y = self.rect[2], self.rect[3]
@@ -701,6 +733,7 @@ class Continue(pygame.sprite.Sprite):
         self.rect = self.rect.move(WIDTH // 2 - (self.rect[2] / 2), pos_y)
 
     def update(self):
+        # загорается красным при наведении мышки
         xm, ym = pygame.mouse.get_pos()
         x, y = self.rect[0], self.rect[1]
         delta_x, delta_y = self.rect[2], self.rect[3]
@@ -710,8 +743,10 @@ class Continue(pygame.sprite.Sprite):
             self.image = Continue.image
 
     def action(self):
+        # просто возвращет ничего для продолжения
         if self.code == 0:
             return
+        # запускает игру из сохранения
         elif self.code == 1:
             game_screen(1)
 
@@ -751,6 +786,7 @@ class Coin(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
+        # анимация монетки и обработка сбора
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player):
             player.coins += 1
@@ -775,6 +811,7 @@ class Potion(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
+        # обработка сбора зелья
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player):
             if self.code == 1:
@@ -804,6 +841,7 @@ class PotionEffect(pygame.sprite.Sprite):
         self.update_counter = 0
 
     def update(self):
+        # анимация эффекта
         self.update_counter += 1
         self.rect = self.image.get_rect().move(player.rect[0] + 0,
                                                player.rect[1] + 40)
@@ -830,6 +868,7 @@ class Magic(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
+        # движение и обработка столкновения с игроком и стеной
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player):
             for _ in range(self.damage * 2):
@@ -858,9 +897,13 @@ class Exit(pygame.sprite.Sprite):
         self.opened = False
 
     def update(self):
-        if pygame.sprite.spritecollideany(self, player_group) and self.current_score >= 5000:
+        # переход на следуюций уровень и подсчёт очков за текущий
+        if (pygame.sprite.spritecollideany(self, player_group) and
+                self.current_score >= 5000):
             f = open('data/save_load.txt', mode='w')
-            data = ['{}level.txt'.format(str(int(start_settings['level'][0]) + 1)),
+            data = ['{}level.txt'.format(str(int
+                                             (start_settings
+                                              ['level'][0]) + 1)),
                     str(player.coins),
                     str(player.hp),
                     str(player.score),
@@ -894,6 +937,7 @@ class Fire(pygame.sprite.Sprite):
         self.update_counter = 0
 
     def update(self, *args):
+        # анимация огня
         self.update_counter += 1
         if pygame.sprite.collide_mask(self, player) and \
                 self.update_counter % 50 == 0:
@@ -921,6 +965,7 @@ class HealMagic(pygame.sprite.Sprite):
         self.heal_counter = 0
 
     def update(self, *args):
+        # анимация и обработка сбора
         self.update_counter += 1
         if pygame.sprite.spritecollideany(self, player_group) and \
                 self.update_counter % 35 == 0:
@@ -951,6 +996,7 @@ class Particle(pygame.sprite.Sprite):
         self.update_counter = 0
 
     def update(self):
+        # обработка двух типов частиц
         self.update_counter += 1
         if self.blood:
             if self.update_counter % 3 == 0:
@@ -998,13 +1044,16 @@ class Wizard(pygame.sprite.Sprite):
 
     def update(self):
         self.update_counter += 1
+        # анимация
         if self.update_counter % 8 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
+        # смерть
         if self.hp <= 0:
             self.kill()
             player.score += self.score
             door.current_score += self.score
+        # стрельба МАААГИЕЙ
         if abs(player.rect.x - self.rect.x) < 400 and \
                 abs(player.rect.y - self.rect.y) < 400 and \
                 self.update_counter % (self.frequency // 2) == 0:
@@ -1156,8 +1205,8 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.frames_walk = [load_image('HeroWalk1.png'),  # куча изображений, тк отдельным шитом нет
-                            load_image('HeroWalk2.png'),
+        self.frames_walk = [load_image('HeroWalk1.png'),  # куча изображений,
+                            load_image('HeroWalk2.png'),  # тк отдельным шитом нет
                             load_image('HeroWalk3.png'),
                             load_image('HeroWalk4.png'),
                             load_image('HeroWalk5.png'),
@@ -1193,7 +1242,8 @@ class Player(pygame.sprite.Sprite):
                            load_image('HeroHit10.png')]
         self.cur_frame = 0
         self.image = self.frames_stand[self.cur_frame]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.rect = self.image.get_rect().move(tile_width * pos_x,
+                                               tile_height * pos_y)
         self.update_counter = 0
         self.coins = start_settings['player_stats'][0]
         Hud(WIDTH - 115, 10, 'coin')
@@ -1219,6 +1269,7 @@ class Player(pygame.sprite.Sprite):
         global door
 
         self.update_counter += 1
+        # анимация
         if self.update_counter % 3 == 0:
             if self.action == 'move':
                 self.cur_frame = (self.cur_frame + 1) % len(self.frames_walk)
@@ -1242,7 +1293,9 @@ class Player(pygame.sprite.Sprite):
                     global player, level_x, level_y
                     start_settings['player_stats'][0] = 0
                     start_settings['player_stats'][1] = 20
-                    player, level_x, level_y, door = generate_level(load_level(start_settings['level']))
+                    settings = generate_level(load_level
+                                              (start_settings['level']))
+                    player, level_x, level_y, door = settings
             elif self.action == 'hit':
                 if not self.hit_animation:
                     self.cur_frame = 0
